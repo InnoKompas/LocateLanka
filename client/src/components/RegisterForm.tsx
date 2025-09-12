@@ -1,5 +1,7 @@
 import { useForm } from '@mantine/form';
 import { useAuth } from '../hooks/useAuth';
+import { Input } from './ui/Input';
+import { Button } from './ui/Button';
 
 interface RegisterFormProps {
   onSuccess: () => void;
@@ -34,61 +36,48 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
   return (
     <form onSubmit={form.onSubmit(handleSubmit)}>
       <div className="space-y-4">
-        <div>
-          <label htmlFor="firstName" className="form-label">
-            First Name
-          </label>
-          <input
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input
             type="text"
-            id="firstName"
-            className="input-field"
+            label="First Name"
             placeholder="John"
             required
+            error={form.errors.firstName}
             {...form.getInputProps('firstName')}
           />
-        </div>
-        <div>
-          <label htmlFor="lastName" className="form-label">
-            Last Name
-          </label>
-          <input
+          
+          <Input
             type="text"
-            id="lastName"
-            className="input-field"
+            label="Last Name"
             placeholder="Doe"
             required
+            error={form.errors.lastName}
             {...form.getInputProps('lastName')}
           />
         </div>
-        <div>
-          <label htmlFor="email" className="form-label">
-            Email
-          </label>
-          <input
-            type="email"
-            id="email"
-            className="input-field"
-            placeholder="your@email.com"
-            required
-            {...form.getInputProps('email')}
-          />
-        </div>
-        <div>
-          <label htmlFor="password" className="form-label">
-            Password
-          </label>
-          <input
-            type="password"
-            id="password"
-            className="input-field"
-            placeholder="Your password"
-            required
-            {...form.getInputProps('password')}
-          />
-        </div>
-        <button type="submit" className="btn btn-primary w-full mt-6">
+        
+        <Input
+          type="email"
+          label="Email"
+          placeholder="your@email.com"
+          required
+          error={form.errors.email}
+          {...form.getInputProps('email')}
+        />
+        
+        <Input
+          type="password"
+          label="Password"
+          placeholder="Your password"
+          required
+          error={form.errors.password}
+          helperText="Password must be at least 6 characters"
+          {...form.getInputProps('password')}
+        />
+        
+        <Button type="submit" className="w-full mt-6">
           Sign Up
-        </button>
+        </Button>
       </div>
     </form>
   );

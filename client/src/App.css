@@ -1,3 +1,5 @@
+/* App-specific styles */
 #root {
   min-height: 100vh;
+  isolation: isolate; /* Creates a new stacking context */
 }

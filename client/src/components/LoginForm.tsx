@@ -1,5 +1,7 @@
 import { useForm } from '@mantine/form';
 import { useAuth } from '../hooks/useAuth';
+import { Input } from './ui/Input';
+import { Button } from './ui/Button';
 
 interface LoginFormProps {
   onSuccess: () => void;
@@ -30,35 +32,27 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   return (
     <form onSubmit={form.onSubmit(handleSubmit)}>
       <div className="space-y-4">
-        <div>
-          <label htmlFor="email" className="form-label">
-            Email
-          </label>
-          <input
-            type="email"
-            id="email"
-            className="input-field"
-            placeholder="your@email.com"
-            required
-            {...form.getInputProps('email')}
-          />
-        </div>
-        <div>
-          <label htmlFor="password" className="form-label">
-            Password
-          </label>
-          <input
-            type="password"
-            id="password"
-            className="input-field"
-            placeholder="Your password"
-            required
-            {...form.getInputProps('password')}
-          />
-        </div>
-        <button type="submit" className="btn btn-primary w-full mt-6">
+        <Input
+          type="email"
+          label="Email"
+          placeholder="your@email.com"
+          required
+          error={form.errors.email}
+          {...form.getInputProps('email')}
+        />
+        
+        <Input
+          type="password"
+          label="Password"
+          placeholder="Your password"
+          required
+          error={form.errors.password}
+          {...form.getInputProps('password')}
+        />
+        
+        <Button type="submit" className="w-full mt-6">
           Sign In
-        </button>
+        </Button>
       </div>
     </form>
   );
