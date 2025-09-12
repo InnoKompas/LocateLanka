@@ -41,7 +41,7 @@ console.log(data);
 
 1. **Clone the repository**:
 ```bash
-git clone https://github.com/your-username/lankalocate.git
+git clone https://github.com/InnoKompas/LocateLanka.git
 cd lankalocate
 ```
 
