@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { ThemeProvider } from './contexts/ThemeContext';
-import { LandingPage } from './pages/LandingPage';
+import { NewLandingPage } from './pages/NewLandingPage';
 import { DashboardLayout } from './components/dashboard/DashboardLayout';
 import { OverviewPage } from './pages/dashboard/OverviewPage';
 import { ApiKeysPage } from './pages/dashboard/ApiKeysPage';
@@ -62,7 +62,7 @@ export default function App() {
                   path="/"
                   element={
                     <PublicRoute>
-                      <LandingPage />
+                      <NewLandingPage />
                     </PublicRoute>
                   }
                 />
