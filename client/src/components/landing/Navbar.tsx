@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Sun, Moon, MapPin } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -86,12 +87,16 @@ export const Navbar = () => {
             >
               {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
             </Button>
-            <Button variant="ghost" size="sm">
-              Sign In
-            </Button>
-            <Button size="sm">
-              Sign Up Free
-            </Button>
+            <Link to="/signin">
+              <Button variant="ghost" size="sm">
+                Sign In
+              </Button>
+            </Link>
+            <Link to="/signup">
+              <Button size="sm">
+                Sign Up Free
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -140,12 +145,16 @@ export const Navbar = () => {
               </button>
             ))}
             <div className="pt-4 border-t border-border space-y-2">
-              <Button variant="ghost" size="sm" className="w-full justify-start">
-                Sign In
-              </Button>
-              <Button size="sm" className="w-full">
-                Sign Up Free
-              </Button>
+              <Link to="/signin">
+                <Button variant="ghost" size="sm" className="w-full justify-start">
+                  Sign In
+                </Button>
+              </Link>
+              <Link to="/signup">
+                <Button size="sm" className="w-full">
+                  Sign Up Free
+                </Button>
+              </Link>
             </div>
           </div>
         </motion.div>

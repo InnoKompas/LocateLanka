@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, CheckCircle, Zap, Shield, Clock } from 'lucide-react';
 import { Button } from '../ui/Button';
@@ -84,14 +85,16 @@ export const CTASection = () => {
             transition={{ duration: 0.8, delay: 0.4 }}
             viewport={{ once: true }}
           >
-            <Button 
-              size="lg" 
-              variant="secondary" 
-              className="bg-white text-indigo-600 hover:bg-gray-100 shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 flex items-center space-x-2"
-            >
-              <span>Sign Up Free</span>
-              <ArrowRight className="w-5 h-5" />
-            </Button>
+            <Link to="/signup">
+              <Button 
+                size="lg" 
+                variant="secondary" 
+                className="bg-white text-indigo-600 hover:bg-gray-100 shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 flex items-center space-x-2"
+              >
+                <span>Sign Up Free</span>
+                <ArrowRight className="w-5 h-5" />
+              </Button>
+            </Link>
             <Button 
               size="lg" 
               variant="outline" 

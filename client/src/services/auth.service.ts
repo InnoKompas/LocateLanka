@@ -38,6 +38,13 @@ class AuthService {
     return response.data;
   }
 
+  async loginWithGoogle(token: string): Promise<AuthResponse> {
+    const response = await axios.post(`${API_URL}/auth/google`, { token }, {
+      withCredentials: true
+    });
+    return response.data;
+  }
+
   async logout(): Promise<void> {
     await axios.post(`${API_URL}/auth/logout`, {}, {
       withCredentials: true

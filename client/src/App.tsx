@@ -1,10 +1,13 @@
 import { MantineProvider } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { NewLandingPage } from './pages/NewLandingPage';
+import { SignInPage } from './pages/auth/SignInPage';
+import { SignUpPage } from './pages/auth/SignUpPage';
 import { DashboardLayout } from './components/dashboard/DashboardLayout';
 import { OverviewPage } from './pages/dashboard/OverviewPage';
 import { ApiKeysPage } from './pages/dashboard/ApiKeysPage';
@@ -50,24 +53,45 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+
   return (
     <QueryClientProvider client={queryClient}>
-      <MantineProvider>
-        <ThemeProvider>
-          <AuthProvider>
-            <Router>
-              <Routes>
-                {/* Public Routes */}
-                <Route
-                  path="/"
-                  element={
-                    <PublicRoute>
-                      <NewLandingPage />
-                    </PublicRoute>
-                  }
-                />
+      <GoogleOAuthProvider clientId={googleClientId}>
+        <MantineProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <Router>
+                <Routes>
+                  {/* Public Routes */}
+                  <Route
+                    path="/"
+                    element={
+                      <PublicRoute>
+                        <NewLandingPage />
+                      </PublicRoute>
+                    }
+                  />
 
-                {/* Dashboard Routes */}
+                  {/* Auth Routes */}
+                  <Route
+                    path="/signin"
+                    element={
+                      <PublicRoute>
+                        <SignInPage />
+                      </PublicRoute>
+                    }
+                  />
+                  <Route
+                    path="/signup"
+                    element={
+                      <PublicRoute>
+                        <SignUpPage />
+                      </PublicRoute>
+                    }
+                  />
+
+                  {/* Dashboard Routes */}
                 <Route
                   path="/dashboard"
                   element={
@@ -100,9 +124,10 @@ export default function App() {
                 },
               }}
             />
-          </AuthProvider>
-        </ThemeProvider>
-      </MantineProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </MantineProvider>
+      </GoogleOAuthProvider>
     </QueryClientProvider>
   );
 }

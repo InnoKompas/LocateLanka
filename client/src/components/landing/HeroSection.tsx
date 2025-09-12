@@ -41,12 +41,12 @@ export const HeroSection = () => {
     }
   ];
 
-  const trustedBy = [
-    { name: "DeliveryLK", users: "50K+" },
-    { name: "GovTech", users: "100K+" },
-    { name: "FormBuilder", users: "25K+" },
-    { name: "LogiSoft", users: "75K+" }
-  ];
+//   const trustedBy = [
+//     { name: "DeliveryLK", users: "50K+" },
+//     { name: "GovTech", users: "100K+" },
+//     { name: "FormBuilder", users: "25K+" },
+//     { name: "LogiSoft", users: "75K+" }
+//   ];
 
   useEffect(() => {
     Prism.highlightAll();
