@@ -5,11 +5,13 @@ import { ILoginCredentials, IRegisterData } from '../types/models/auth.types';
 export class AuthController {
   static async register(req: Request, res: Response) {
     try {
+      console.log('Registration request body:', req.body);
       const data = req.body as IRegisterData;
       const user = await AuthService.register(data);
       res.status(201).json(user);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      console.error('Registration error:', error);
+      res.status(400).json({ error: error.message, details: error });
     }
   }
 

@@ -14,7 +14,7 @@ const app: Application = express();
 // Middleware
 app.use(helmet());
 app.use(cors({
-    origin: process.env['CLIENT_URL'] || 'http://localhost:3000',
+    origin: process.env['CLIENT_URL'] || 'http://localhost:5173',
     credentials: true
 }));
 app.use(express.json({ limit: '1mb' }));
@@ -25,9 +25,6 @@ app.use(morgan('combined'));
 app.get('/health', (_req, res) => {
 	res.status(200).json({ status: 'ok' });
 });
-
-// API key middleware for all API routes
-app.use(apiKeyMiddleware);
 
 // Auth routes (no API key required)
 app.use('/auth', authRoutes);
