@@ -5,6 +5,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { NewLandingPage } from './pages/NewLandingPage';
 import { SignInPage } from './pages/auth/SignInPage';
 import { SignUpPage } from './pages/auth/SignUpPage';
@@ -53,81 +54,110 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-  return (
+  const AppContent = () => (
     <QueryClientProvider client={queryClient}>
-      <GoogleOAuthProvider clientId={googleClientId}>
-        <MantineProvider>
-          <ThemeProvider>
-            <AuthProvider>
-              <Router>
-                <Routes>
-                  {/* Public Routes */}
-                  <Route
-                    path="/"
-                    element={
-                      <PublicRoute>
-                        <NewLandingPage />
-                      </PublicRoute>
-                    }
-                  />
-
-                  {/* Auth Routes */}
-                  <Route
-                    path="/signin"
-                    element={
-                      <PublicRoute>
-                        <SignInPage />
-                      </PublicRoute>
-                    }
-                  />
-                  <Route
-                    path="/signup"
-                    element={
-                      <PublicRoute>
-                        <SignUpPage />
-                      </PublicRoute>
-                    }
-                  />
-
-                  {/* Dashboard Routes */}
+      <MantineProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <Router>
+              <Routes>
+                {/* Public Routes */}
                 <Route
-                  path="/dashboard"
+                  path="/"
                   element={
-                    <PrivateRoute>
-                      <DashboardLayout />
-                    </PrivateRoute>
+                    <PublicRoute>
+                      <NewLandingPage />
+                    </PublicRoute>
                   }
-                >
-                  <Route index element={<OverviewPage />} />
-                  <Route path="api-keys" element={<ApiKeysPage />} />
-                  <Route path="usage" element={<UsageAnalyticsPage />} />
-                  <Route path="billing" element={<BillingPage />} />
-                  <Route path="settings" element={<ProfileSettingsPage />} />
-                </Route>
+                />
 
-                {/* Catch all route */}
-                <Route path="*" element={<Navigate to="/" />} />
-              </Routes>
-            </Router>
-            
-            {/* Toast notifications */}
-            <Toaster
-              position="top-right"
-              toastOptions={{
-                duration: 4000,
-                style: {
-                  background: 'var(--toast-bg)',
-                  color: 'var(--toast-color)',
-                  border: '1px solid var(--toast-border)',
-                },
-              }}
-            />
-            </AuthProvider>
-          </ThemeProvider>
-        </MantineProvider>
-      </GoogleOAuthProvider>
+                {/* Auth Routes */}
+                <Route
+                  path="/signin"
+                  element={
+                    <PublicRoute>
+                      <SignInPage />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/signup"
+                  element={
+                    <PublicRoute>
+                      <SignUpPage />
+                    </PublicRoute>
+                  }
+                />
+
+                {/* Dashboard Routes */}
+              <Route
+                path="/dashboard"
+                element={
+                  <PrivateRoute>
+                    <DashboardLayout />
+                  </PrivateRoute>
+                }
+              >
+                <Route index element={
+                  <ErrorBoundary>
+                    <OverviewPage />
+                  </ErrorBoundary>
+                } />
+                <Route path="api-keys" element={
+                  <ErrorBoundary>
+                    <ApiKeysPage />
+                  </ErrorBoundary>
+                } />
+                <Route path="usage" element={
+                  <ErrorBoundary>
+                    <UsageAnalyticsPage />
+                  </ErrorBoundary>
+                } />
+                <Route path="billing" element={
+                  <ErrorBoundary>
+                    <BillingPage />
+                  </ErrorBoundary>
+                } />
+                <Route path="settings" element={
+                  <ErrorBoundary>
+                    <ProfileSettingsPage />
+                  </ErrorBoundary>
+                } />
+              </Route>
+
+              {/* Catch all route */}
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+          </Router>
+          
+          {/* Toast notifications */}
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: 'var(--toast-bg)',
+                color: 'var(--toast-color)',
+                border: '1px solid var(--toast-border)',
+              },
+            }}
+          />
+          </AuthProvider>
+        </ThemeProvider>
+      </MantineProvider>
     </QueryClientProvider>
   );
+
+  // Only wrap with GoogleOAuthProvider if client ID is available
+  if (googleClientId) {
+    return (
+      <GoogleOAuthProvider clientId={googleClientId}>
+        <AppContent />
+      </GoogleOAuthProvider>
+    );
+  }
+
+  return <AppContent />;
 }

@@ -3,7 +3,6 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IApiKey extends Document {
   userId: mongoose.Types.ObjectId;
   name: string;
-  key: string;
   keyPrefix: string;
   hashedKey: string;
   isActive: boolean;
@@ -61,12 +60,6 @@ const ApiKeySchema = new Schema<IApiKey>({
     required: true,
     trim: true,
     maxlength: 100
-  },
-  key: {
-    type: String,
-    required: true,
-    unique: true,
-    index: true
   },
   keyPrefix: {
     type: String,

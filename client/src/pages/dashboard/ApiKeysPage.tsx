@@ -2,9 +2,6 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { 
   Plus, 
-  Copy, 
-  Eye, 
-  EyeOff, 
   Trash2, 
   MoreVertical,
   CheckCircle,
@@ -15,18 +12,18 @@ import { Card, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Modal, ModalFooter } from '../../components/ui/Modal';
+import { ApiKeyDisplay } from '../../components/models/ApiKeyDisplay';
 import { 
   getApiKeys, 
   createApiKey, 
-  revokeApiKey, 
-  updateApiKey,
+  revokeApiKey,
   type ApiKey 
 } from '../../services/dashboard.service';
 
 interface CreateKeyModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (newKey?: ApiKey) => void;
 }
 
 function CreateKeyModal({ isOpen, onClose, onSuccess }: CreateKeyModalProps) {
@@ -39,9 +36,9 @@ function CreateKeyModal({ isOpen, onClose, onSuccess }: CreateKeyModalProps) {
 
     setIsLoading(true);
     try {
-      await createApiKey(keyName.trim());
+      const newKey = await createApiKey(keyName.trim());
       toast.success('API key created successfully!');
-      onSuccess();
+      onSuccess(newKey);
       onClose();
       setKeyName('');
     } catch (error) {
@@ -81,27 +78,13 @@ function CreateKeyModal({ isOpen, onClose, onSuccess }: CreateKeyModalProps) {
 interface ApiKeyCardProps {
   apiKey: ApiKey;
   onRevoke: (keyId: string) => void;
-  onToggleStatus: (keyId: string, isActive: boolean) => void;
 }
 
-function ApiKeyCard({ apiKey, onRevoke, onToggleStatus }: ApiKeyCardProps) {
-  const [isKeyVisible, setIsKeyVisible] = useState(false);
+function ApiKeyCard({ apiKey, onRevoke }: ApiKeyCardProps) {
   const [showRevokeConfirm, setShowRevokeConfirm] = useState(false);
 
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success('API key copied to clipboard!');
-    } catch (error) {
-      toast.error('Failed to copy to clipboard');
-    }
-  };
-
-  const formatKey = (key: string) => {
-    if (!isKeyVisible) {
-      return `${key.substring(0, 8)}${'*'.repeat(24)}`;
-    }
-    return key;
+  const handleToggleStatus = () => {
+    toast('Status toggle feature coming soon!', { icon: 'ℹ️' });
   };
 
   const formatDate = (dateString: string) => {
@@ -141,26 +124,12 @@ function ApiKeyCard({ apiKey, onRevoke, onToggleStatus }: ApiKeyCardProps) {
                 </span>
               </div>
               
-              <div className="flex items-center space-x-2 mb-3">
-                <code className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded text-sm font-mono text-gray-900 dark:text-white">
-                  {formatKey(apiKey.key)}
-                </code>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsKeyVisible(!isKeyVisible)}
-                  className="p-2"
-                >
-                  {isKeyVisible ? <EyeOff size={16} /> : <Eye size={16} />}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => copyToClipboard(apiKey.key)}
-                  className="p-2"
-                >
-                  <Copy size={16} />
-                </Button>
+              <div className="mb-3">
+                <ApiKeyDisplay
+                  apiKey={apiKey.key}
+                  keyPrefix={apiKey.keyPrefix}
+                  size="md"
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4 text-sm">
@@ -179,7 +148,13 @@ function ApiKeyCard({ apiKey, onRevoke, onToggleStatus }: ApiKeyCardProps) {
                 <div>
                   <p className="text-gray-500 dark:text-gray-400">Calls This Month</p>
                   <p className="font-medium text-gray-900 dark:text-white">
-                    {apiKey.callsThisMonth.toLocaleString()}
+                    {(apiKey.callsThisMonth || apiKey.usage?.requestsThisMonth || 0).toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 dark:text-gray-400">Environment</p>
+                  <p className="font-medium text-gray-900 dark:text-white capitalize">
+                    {apiKey.metadata?.environment || 'development'}
                   </p>
                 </div>
               </div>
@@ -189,7 +164,7 @@ function ApiKeyCard({ apiKey, onRevoke, onToggleStatus }: ApiKeyCardProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onToggleStatus(apiKey.id, !apiKey.isActive)}
+                onClick={handleToggleStatus}
                 className="p-2"
               >
                 <MoreVertical size={16} />
@@ -234,7 +209,7 @@ function ApiKeyCard({ apiKey, onRevoke, onToggleStatus }: ApiKeyCardProps) {
           <Button 
             variant="danger"
             onClick={() => {
-              onRevoke(apiKey.id);
+              onRevoke(apiKey.id || apiKey._id);
               setShowRevokeConfirm(false);
             }}
           >
@@ -246,8 +221,69 @@ function ApiKeyCard({ apiKey, onRevoke, onToggleStatus }: ApiKeyCardProps) {
   );
 }
 
+interface NewKeyModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  apiKey: ApiKey | null;
+}
+
+function NewKeyModal({ isOpen, onClose, apiKey }: NewKeyModalProps) {
+  if (!apiKey) return null;
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="API Key Created Successfully">
+      <div className="space-y-4">
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+          <div className="flex items-center space-x-2 mb-2">
+            <CheckCircle className="text-green-600" size={20} />
+            <h3 className="font-medium text-green-800 dark:text-green-300">
+              Your API key has been created!
+            </h3>
+          </div>
+          <p className="text-sm text-green-700 dark:text-green-400">
+            Please copy and save this key now. For security reasons, it won't be shown again.
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            API Key
+          </label>
+          <ApiKeyDisplay
+            apiKey={apiKey.key}
+            keyPrefix={apiKey.keyPrefix}
+            size="lg"
+            className="w-full"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <p className="text-gray-500 dark:text-gray-400">Name</p>
+            <p className="font-medium text-gray-900 dark:text-white">{apiKey.name}</p>
+          </div>
+          <div>
+            <p className="text-gray-500 dark:text-gray-400">Environment</p>
+            <p className="font-medium text-gray-900 dark:text-white capitalize">
+              {apiKey.metadata?.environment || 'development'}
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <ModalFooter>
+        <Button onClick={onClose} className="w-full">
+          I've Saved My Key
+        </Button>
+      </ModalFooter>
+    </Modal>
+  );
+}
+
 export function ApiKeysPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showNewKeyModal, setShowNewKeyModal] = useState(false);
+  const [newlyCreatedKey, setNewlyCreatedKey] = useState<ApiKey | null>(null);
   const queryClient = useQueryClient();
 
   const { data: apiKeys, isLoading } = useQuery('apiKeys', getApiKeys);
@@ -262,25 +298,16 @@ export function ApiKeysPage() {
     }
   });
 
-  const toggleStatusMutation = useMutation(
-    ({ keyId, isActive }: { keyId: string; isActive: boolean }) =>
-      updateApiKey(keyId, { isActive }),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries('apiKeys');
-        toast.success('API key status updated');
-      },
-      onError: () => {
-        toast.error('Failed to update API key status');
-      }
-    }
-  );
 
-  const handleCreateSuccess = () => {
+  const handleCreateSuccess = (newKey?: ApiKey) => {
     queryClient.invalidateQueries('apiKeys');
+    if (newKey) {
+      setNewlyCreatedKey(newKey);
+      setShowNewKeyModal(true);
+    }
   };
 
-  const canCreateMore = (apiKeys?.length || 0) < 2;
+  const canCreateMore = (apiKeys?.length || 0) < 5; // Server allows up to 5 keys
 
   if (isLoading) {
     return (
@@ -333,7 +360,7 @@ export function ApiKeysPage() {
               </h3>
               <ul className="text-sm text-gray-600 dark:text-gray-400 mt-1 space-y-1">
                 <li>• Keep your API keys secure and never share them publicly</li>
-                <li>• You can create up to 2 API keys per account</li>
+                <li>• You can create up to 5 API keys per account</li>
                 <li>• Use different keys for different environments (development, production)</li>
                 <li>• Monitor usage regularly and revoke unused keys</li>
               </ul>
@@ -350,9 +377,6 @@ export function ApiKeysPage() {
               key={apiKey.id}
               apiKey={apiKey}
               onRevoke={(keyId) => revokeMutation.mutate(keyId)}
-              onToggleStatus={(keyId, isActive) => 
-                toggleStatusMutation.mutate({ keyId, isActive })
-              }
             />
           ))
         ) : (
@@ -392,7 +416,7 @@ export function ApiKeysPage() {
                   Key Limit Reached
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  You've reached the maximum of 2 API keys. Revoke an existing key to create a new one.
+                  You've reached the maximum of 5 API keys. Revoke an existing key to create a new one.
                 </p>
               </div>
             </div>
@@ -405,6 +429,16 @@ export function ApiKeysPage() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onSuccess={handleCreateSuccess}
+      />
+
+      {/* New Key Display Modal */}
+      <NewKeyModal
+        isOpen={showNewKeyModal}
+        onClose={() => {
+          setShowNewKeyModal(false);
+          setNewlyCreatedKey(null);
+        }}
+        apiKey={newlyCreatedKey}
       />
     </div>
   );

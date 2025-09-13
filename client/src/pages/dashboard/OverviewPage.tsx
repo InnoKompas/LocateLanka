@@ -82,7 +82,9 @@ export function OverviewPage() {
   const getQuotaStatus = () => {
     if (!userStats) return { status: 'unknown', color: 'gray' };
     
-    const usagePercentage = ((userStats.totalApiCalls / (userStats.totalApiCalls + userStats.remainingQuota)) * 100);
+    const dailyUsage = userStats.totalRequestsToday || 0;
+    const dailyLimit = userStats.totalDailyLimit || 1;
+    const usagePercentage = (dailyUsage / dailyLimit) * 100;
     
     if (usagePercentage >= 90) return { status: 'critical', color: 'red' };
     if (usagePercentage >= 70) return { status: 'warning', color: 'yellow' };
@@ -128,16 +130,16 @@ export function OverviewPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
           title="Total API Calls"
-          value={userStats?.totalApiCalls.toLocaleString() || '0'}
-          subtitle="This month"
+          value={(userStats?.totalRequests || 0).toLocaleString()}
+          subtitle="All time"
           icon={<Activity className="text-indigo-600" size={24} />}
           trend={{ value: 12, isPositive: true }}
         />
         
         <StatsCard
-          title="Remaining Quota"
-          value={userStats?.remainingQuota.toLocaleString() || '0'}
-          subtitle={`${userStats?.currentPlan} plan`}
+          title="Calls Today"
+          value={(userStats?.totalRequestsToday || 0).toLocaleString()}
+          subtitle={`of ${(userStats?.totalDailyLimit || 0).toLocaleString()} daily limit`}
           icon={<TrendingUp className="text-green-600" size={24} />}
         />
         
@@ -149,9 +151,9 @@ export function OverviewPage() {
         />
         
         <StatsCard
-          title="Subscription Status"
-          value={userStats?.currentPlan || 'Free'}
-          subtitle={userStats?.subscriptionStatus || 'Active'}
+          title="Monthly Usage"
+          value={(userStats?.totalRequestsThisMonth || 0).toLocaleString()}
+          subtitle={`of ${(userStats?.totalMonthlyLimit || 0).toLocaleString()} monthly limit`}
           icon={<CreditCard className="text-purple-600" size={24} />}
         />
       </div>
@@ -183,7 +185,7 @@ export function OverviewPage() {
                   {quotaStatus.status === 'critical' && 'Quota limit nearly reached'}
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {userStats?.remainingQuota.toLocaleString()} calls remaining
+                  {((userStats?.totalDailyLimit || 0) - (userStats?.totalRequestsToday || 0)).toLocaleString()} calls remaining today
                 </p>
               </div>
               
@@ -197,8 +199,8 @@ export function OverviewPage() {
             {/* Progress bar */}
             <div className="mt-4">
               <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
-                <span>Used: {userStats?.totalApiCalls.toLocaleString()}</span>
-                <span>Limit: {((userStats?.totalApiCalls || 0) + (userStats?.remainingQuota || 0)).toLocaleString()}</span>
+                <span>Used: {(userStats?.totalRequestsToday || 0).toLocaleString()}</span>
+                <span>Limit: {(userStats?.totalDailyLimit || 0).toLocaleString()}</span>
               </div>
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                 <div 
@@ -207,8 +209,8 @@ export function OverviewPage() {
                     quotaStatus.color === 'yellow' ? 'bg-yellow-500' : 'bg-red-500'
                   }`}
                   style={{ 
-                    width: `${Math.min(100, ((userStats?.totalApiCalls || 0) / 
-                    ((userStats?.totalApiCalls || 0) + (userStats?.remainingQuota || 1))) * 100)}%` 
+                    width: `${Math.min(100, ((userStats?.totalRequestsToday || 0) / 
+                    (userStats?.totalDailyLimit || 1)) * 100)}%` 
                   }}
                 ></div>
               </div>

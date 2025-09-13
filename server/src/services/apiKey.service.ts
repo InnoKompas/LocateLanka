@@ -55,11 +55,10 @@ export class ApiKeyService {
     const { key, keyPrefix } = ApiKey.generateKey();
     const hashedKey = ApiKey.hashKey(key);
 
-    // Create the API key document
+    // Create the API key document (without storing the plain key)
     const apiKey = new ApiKey({
       userId: data.userId,
       name: data.name,
-      key,
       keyPrefix,
       hashedKey,
       permissions: data.permissions || ['read:all'],
@@ -80,7 +79,7 @@ export class ApiKeyService {
 
     // Return the API key with the plain key (only time it's returned)
     const result = apiKey.toJSON() as ApiKeyWithPlainKey;
-    result.key = key;
+    result.key = key; // Add the plain key to the response only
     
     return result;
   }
@@ -208,8 +207,7 @@ export class ApiKeyService {
     const { key, keyPrefix } = ApiKey.generateKey();
     const hashedKey = ApiKey.hashKey(key);
 
-    // Update the key
-    apiKey.key = key;
+    // Update the key (only store hashed version)
     apiKey.keyPrefix = keyPrefix;
     apiKey.hashedKey = hashedKey;
     

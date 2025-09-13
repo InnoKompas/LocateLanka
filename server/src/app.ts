@@ -3,6 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import apiKeyRoutes from './routes/api/keys.routes';
+import analyticsRoutes from './routes/api/analytics.routes';
 
 // Configuration
 import { 
@@ -24,13 +25,11 @@ import {
   errorHandler, 
   notFoundHandler 
 } from './middlewares/error.middleware';
-import { apiKeyMiddleware } from './middlewares/apiKey';
 
 // Routes
 import healthRoutes from './routes/health.routes';
 import authRoutes from './routes/auth.routes';
 import apiV1Routes from './routes/api/v1';
-import { authMiddleware } from './middlewares/auth.middleware';
 
 const app: Application = express();
 
@@ -73,6 +72,9 @@ app.use('/auth', authRoutes);
 
 // API Key management routes (require JWT authentication)
 app.use('/api/keys', apiKeyRoutes);
+
+// Analytics routes (require JWT authentication)
+app.use('/api/analytics', analyticsRoutes);
 
 // API v1 routes (require API key authentication)
 app.use('/api/v1', apiV1Routes);

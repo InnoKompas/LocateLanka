@@ -10,6 +10,7 @@ interface GoogleAuthButtonProps {
 
 export const GoogleAuthButton = ({ mode, onSuccess }: GoogleAuthButtonProps) => {
   const { loginWithGoogle } = useAuth();
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     if (!credentialResponse.credential) {
@@ -30,6 +31,17 @@ export const GoogleAuthButton = ({ mode, onSuccess }: GoogleAuthButtonProps) => 
   const handleGoogleError = () => {
     toast.error('Google authentication was cancelled or failed');
   };
+
+  // Don't render if Google OAuth is not configured
+  if (!googleClientId) {
+    return (
+      <div className="w-full p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
+        <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+          Google Sign-In is not configured
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">

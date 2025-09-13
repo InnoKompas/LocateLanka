@@ -76,14 +76,14 @@ export const SignUpPage = () => {
     setIsLoading(true);
     try {
       const { confirmPassword, ...userData } = data;
-      await registerUser(userData);
-      toast.success('Account created successfully! Welcome to LankaLocate!');
+      const response = await registerUser(userData);
+      toast.success(response.message);
       setTimeout(() => {
-        navigate('/dashboard');
-      }, 1000);
+        navigate('/signin');
+      }, 1500);
     } catch (error: any) {
       console.error('Sign up failed:', error);
-      toast.error(error?.response?.data?.message || 'Registration failed. Please try again.');
+      toast.error(error.message || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
