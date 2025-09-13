@@ -63,8 +63,8 @@ VITE_GOOGLE_CLIENT_ID=your_google_client_id
 # Server (.env)
 NODE_ENV=development
 PORT=5000
-MONGODB_URI=mongodb://localhost:27017/lankalocate
-JWT_SECRET=your_jwt_secret
+MONGO_URI=mongodb://localhost:27017/lankalocate
+JWT_ACCESS_SECRET=your_JWT_ACCESS_SECRET
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 ```
@@ -332,7 +332,7 @@ docker-compose up -d
 ```
 
 3. **Access application**:
-- Frontend: http://localhost:3000
+- Frontend: http://localhost:5173
 - Backend: http://localhost:5000
 - Database: localhost:27017
 
