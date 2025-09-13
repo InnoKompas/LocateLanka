@@ -1,38 +1,101 @@
-
-
 import express, { Application } from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
-import gnDivisionRoutes from './routes/gnDivision';
-import authRoutes from './routes/auth.routes';
+import morgan from 'morgan';
+import apiKeyRoutes from './routes/api/keys.routes';
+
+// Configuration
+import { 
+  DatabaseConfig, 
+  LOGGING, 
+  PERFORMANCE, 
+  IS_PRODUCTION 
+} from './config';
+import { logger } from './config/logger.config';
+
+// Middleware
+import { 
+  securityHeaders, 
+  corsOptions, 
+  requestTimeout, 
+  requestId 
+} from './middlewares/security.middleware';
+import { 
+  errorHandler, 
+  notFoundHandler 
+} from './middlewares/error.middleware';
 import { apiKeyMiddleware } from './middlewares/apiKey';
+
+// Routes
+import healthRoutes from './routes/health.routes';
+import authRoutes from './routes/auth.routes';
+import apiV1Routes from './routes/api/v1';
+import { authMiddleware } from './middlewares/auth.middleware';
 
 const app: Application = express();
 
-// Middleware
-app.use(helmet());
-app.use(cors({
-    origin: process.env['CLIENT_URL'] || 'http://localhost:5173',
-    credentials: true
-}));
-app.use(express.json({ limit: '1mb' }));
-app.use(cookieParser());
-app.use(morgan('combined'));
+// Trust proxy (for production behind load balancer)
+if (IS_PRODUCTION) {
+  app.set('trust proxy', 1);
+}
 
-// Health check endpoint
-app.get('/health', (_req, res) => {
-	res.status(200).json({ status: 'ok' });
-});
+// Request ID and timeout
+app.use(requestId);
+app.use(requestTimeout(PERFORMANCE.REQUEST_TIMEOUT));
+
+// Security middleware
+app.use(securityHeaders);
+app.use(cors(corsOptions));
+
+// Body parsing
+app.use(express.json({ limit: PERFORMANCE.BODY_LIMIT }));
+app.use(express.urlencoded({ extended: true, limit: PERFORMANCE.BODY_LIMIT }));
+app.use(cookieParser());
+
+// Logging
+if (LOGGING.FORMAT === 'dev') {
+  app.use(morgan('dev'));
+} else {
+  app.use(morgan(LOGGING.FORMAT, {
+    stream: {
+      write: (message: string) => {
+        logger.http(message.trim());
+      }
+    }
+  }));
+}
+
+// Health check routes (no authentication required)
+app.use('/', healthRoutes);
 
 // Auth routes (no API key required)
 app.use('/auth', authRoutes);
 
-// Routes that require API key
-app.use(apiKeyMiddleware);
+// API Key management routes (require JWT authentication)
+app.use('/api/keys', apiKeyRoutes);
 
-// GN Division API routes
-app.use('/', gnDivisionRoutes);
+// API v1 routes (require API key authentication)
+app.use('/api/v1', apiV1Routes);
+
+// 404 handler
+app.use(notFoundHandler);
+
+// Global error handler
+app.use(errorHandler);
+
+// Initialize database connection
+const initializeDatabase = async (): Promise<void> => {
+  try {
+    const dbConfig = DatabaseConfig.getInstance();
+    await dbConfig.connect();
+    logger.info('Application initialized successfully');
+  } catch (error) {
+    logger.error('Failed to initialize application:', error);
+    process.exit(1);
+  }
+};
+
+// Initialize on startup
+initializeDatabase();
 
 export default app;

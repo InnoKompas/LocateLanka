@@ -3,7 +3,7 @@ import { IAuthTokens, IDecodedToken, ILoginCredentials, IRegisterData, IUser } f
 import { User } from '../models/user.model';
 import { RefreshToken } from '../models/refreshToken.model';
 
-const JWT_SECRET = process.env['JWT_SECRET'] || 'your-secret-key';
+const JWT_ACCESS_SECRET = process.env['JWT_ACCESS_SECRET'] || 'your-secret-key';
 const JWT_REFRESH_SECRET = process.env['JWT_REFRESH_SECRET'] || 'your-refresh-secret-key';
 
 export class AuthService {
@@ -62,7 +62,7 @@ export class AuthService {
   private static async generateTokens(user: IUser): Promise<IAuthTokens> {
     const accessToken = jwt.sign(
       { userId: user._id, role: user.role },
-      JWT_SECRET,
+      JWT_ACCESS_SECRET,
       { expiresIn: '15m' }
     );
 
@@ -84,7 +84,7 @@ export class AuthService {
 
   static verifyToken(token: string): IDecodedToken {
     try {
-      return jwt.verify(token, JWT_SECRET) as IDecodedToken;
+      return jwt.verify(token, JWT_ACCESS_SECRET) as IDecodedToken;
     } catch (error) {
       throw new Error('Invalid token');
     }
