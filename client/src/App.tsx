@@ -95,6 +95,32 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function PremiumRoute({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/signin" />;
+  }
+
+  // Check if user has Pro or Enterprise access
+  const userPlan = user.subscription?.plan || 'free';
+  const hasAccess = userPlan === 'pro' || userPlan === 'enterprise';
+
+  if (!hasAccess) {
+    return <Navigate to="/dashboard/billing" />;
+  }
+
+  return <>{children}</>;
+}
+
 export default function App() {
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -163,9 +189,11 @@ export default function App() {
                   </ErrorBoundary>
                 } />
                 <Route path="usage" element={
-                  <ErrorBoundary>
-                    <UsageAnalyticsPage />
-                  </ErrorBoundary>
+                  <PremiumRoute>
+                    <ErrorBoundary>
+                      <UsageAnalyticsPage />
+                    </ErrorBoundary>
+                  </PremiumRoute>
                 } />
                 <Route path="billing" element={
                   <ErrorBoundary>

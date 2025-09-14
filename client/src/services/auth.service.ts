@@ -22,6 +22,12 @@ export interface User {
   isActive: boolean;
   lastLogin?: string;
   createdAt: string;
+  subscription?: {
+    plan: 'free' | 'pro' | 'enterprise';
+    status: string;
+    startDate?: string;
+    endDate?: string;
+  };
 }
 
 export interface AuthResponse {

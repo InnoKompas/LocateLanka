@@ -33,7 +33,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
 
-  // Define navigation items based on user role
+  // Define navigation items based on user role and subscription
   const getNavigationItems = (): NavigationItem[] => {
     if (user?.role === 'admin') {
       return [
@@ -45,13 +45,27 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
         { name: 'System Settings', href: '/dashboard/settings', icon: Settings },
       ];
     } else {
-      return [
+      // Get user's subscription plan
+      const userPlan = user?.subscription?.plan || 'free';
+      const hasAnalyticsAccess = userPlan === 'pro' || userPlan === 'enterprise';
+
+      const baseItems = [
         { name: 'Overview', href: '/dashboard', icon: Home },
         { name: 'API Keys', href: '/dashboard/api-keys', icon: Key },
-        { name: 'Usage Analytics', href: '/dashboard/usage', icon: BarChart3 },
-        { name: 'Billing', href: '/dashboard/billing', icon: CreditCard },
-        { name: 'Settings', href: '/dashboard/settings', icon: Settings },
       ];
+
+      // Only add Usage Analytics for Pro and Enterprise users
+      if (hasAnalyticsAccess) {
+        baseItems.push({ name: 'Usage Analytics', href: '/dashboard/usage', icon: BarChart3 });
+      }
+
+      // Add remaining items
+      baseItems.push(
+        { name: 'Billing', href: '/dashboard/billing', icon: CreditCard },
+        { name: 'Settings', href: '/dashboard/settings', icon: Settings }
+      );
+
+      return baseItems;
     }
   };
 
