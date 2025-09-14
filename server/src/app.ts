@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import apiKeyRoutes from './routes/api/keys.routes';
 import analyticsRoutes from './routes/api/analytics.routes';
+import adminRoutes from './routes/admin.routes';
 
 // Configuration
 import { 
@@ -75,6 +76,9 @@ app.use('/api/keys', apiKeyRoutes);
 
 // Analytics routes (require JWT authentication)
 app.use('/api/analytics', analyticsRoutes);
+
+// Admin routes (require admin JWT authentication)
+app.use('/api/admin', adminRoutes);
 
 // API v1 routes (require API key authentication)
 app.use('/api/v1', apiV1Routes);

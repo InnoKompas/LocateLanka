@@ -10,12 +10,15 @@ import { LandingPage } from './pages/LandingPage';
 import { SignInPage } from './pages/auth/SignInPage';
 import { SignUpPage } from './pages/auth/SignUpPage';
 import { DashboardLayout } from './components/dashboard/DashboardLayout';
-import { OverviewPage } from './pages/dashboard/OverviewPage';
+import { DashboardOverview } from './components/dashboard/DashboardOverview';
+import { AdminBillingWrapper } from './components/dashboard/AdminBillingWrapper';
+import { AdminSettingsWrapper } from './components/dashboard/AdminSettingsWrapper';
 import { ApiKeysPage } from './pages/dashboard/ApiKeysPage';
 import { UsageAnalyticsPage } from './pages/dashboard/UsageAnalyticsPage';
-import { BillingPage } from './pages/dashboard/BillingPage';
-import { ProfileSettingsPage } from './pages/dashboard/ProfileSettingsPage';
 import { DocsPage } from './pages/DocsPage';
+import { AdminUsersPage } from './pages/admin/AdminUsersPage';
+import { AdminKeysPage } from './pages/admin/AdminKeysPage';
+import { AdminAnalyticsPage } from './pages/admin/AdminAnalyticsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -68,6 +71,28 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
 
   // Redirect authenticated users away from auth pages to dashboard
   return !user ? <>{children}</> : <Navigate to="/dashboard" />;
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/signin" />;
+  }
+
+  if (user.role !== 'admin') {
+    return <Navigate to="/dashboard" />;
+  }
+
+  return <>{children}</>;
 }
 
 export default function App() {
@@ -129,7 +154,7 @@ export default function App() {
               >
                 <Route index element={
                   <ErrorBoundary>
-                    <OverviewPage />
+                    <DashboardOverview />
                   </ErrorBoundary>
                 } />
                 <Route path="api-keys" element={
@@ -144,13 +169,36 @@ export default function App() {
                 } />
                 <Route path="billing" element={
                   <ErrorBoundary>
-                    <BillingPage />
+                    <AdminBillingWrapper />
                   </ErrorBoundary>
                 } />
                 <Route path="settings" element={
                   <ErrorBoundary>
-                    <ProfileSettingsPage />
+                    <AdminSettingsWrapper />
                   </ErrorBoundary>
+                } />
+                
+                {/* Admin routes using shared dashboard layout */}
+                <Route path="users" element={
+                  <AdminRoute>
+                    <ErrorBoundary>
+                      <AdminUsersPage />
+                    </ErrorBoundary>
+                  </AdminRoute>
+                } />
+                <Route path="keys" element={
+                  <AdminRoute>
+                    <ErrorBoundary>
+                      <AdminKeysPage />
+                    </ErrorBoundary>
+                  </AdminRoute>
+                } />
+                <Route path="analytics" element={
+                  <AdminRoute>
+                    <ErrorBoundary>
+                      <AdminAnalyticsPage />
+                    </ErrorBoundary>
+                  </AdminRoute>
                 } />
               </Route>
 

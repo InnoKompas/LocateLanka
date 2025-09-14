@@ -8,10 +8,13 @@ import {
   Menu,
   X,
   Moon,
-  Sun
+  Sun,
+  Users,
+  LayoutDashboard
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../ui/Button';
 
 interface SidebarProps {
@@ -19,17 +22,40 @@ interface SidebarProps {
   onToggle: () => void;
 }
 
-const navigation = [
-  { name: 'Overview', href: '/dashboard', icon: Home },
-  { name: 'API Keys', href: '/dashboard/api-keys', icon: Key },
-  { name: 'Usage Analytics', href: '/dashboard/usage', icon: BarChart3 },
-  { name: 'Billing', href: '/dashboard/billing', icon: CreditCard },
-  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
-];
+interface NavigationItem {
+  name: string;
+  href: string;
+  icon: any;
+}
 
 export function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
+  const { user } = useAuth();
+
+  // Define navigation items based on user role
+  const getNavigationItems = (): NavigationItem[] => {
+    if (user?.role === 'admin') {
+      return [
+        { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+        { name: 'Users', href: '/dashboard/users', icon: Users },
+        { name: 'API Keys', href: '/dashboard/keys', icon: Key },
+        { name: 'Usage Analytics', href: '/dashboard/analytics', icon: BarChart3 },
+        { name: 'Billing & Plans', href: '/dashboard/billing', icon: CreditCard },
+        { name: 'System Settings', href: '/dashboard/settings', icon: Settings },
+      ];
+    } else {
+      return [
+        { name: 'Overview', href: '/dashboard', icon: Home },
+        { name: 'API Keys', href: '/dashboard/api-keys', icon: Key },
+        { name: 'Usage Analytics', href: '/dashboard/usage', icon: BarChart3 },
+        { name: 'Billing', href: '/dashboard/billing', icon: CreditCard },
+        { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+      ];
+    }
+  };
+
+  const navigation = getNavigationItems();
 
   return (
     <>
@@ -54,12 +80,17 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
         {/* Header */}
         <div className="flex items-center justify-between h-16 px-6 border-b border-border">
           <div className="flex items-center">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shadow-sm hover:shadow-md transition-shadow">
+            <div className="w-8 h-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center shadow-sm hover:shadow-md transition-shadow">
               <span className="text-white font-bold text-sm">LL</span>
             </div>
-            <span className="ml-3 text-heading-3 text-text-primary font-semibold">
-              LocateLanka
-            </span>
+            <div className="ml-3">
+              <span className="text-heading-3 text-text-primary font-semibold">
+                {user?.role === 'admin' ? 'Admin Panel' : 'LocateLanka'}
+              </span>
+              {user?.role === 'admin' && (
+                <p className="text-xs text-text-secondary">LankaLocate</p>
+              )}
+            </div>
           </div>
           
           <Button

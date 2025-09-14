@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useForm } from '@mantine/form';
-import { useAuth } from '../hooks/useAuth';
-import { Input } from './ui/Input';
-import { Button } from './ui/Button';
+import { useAuth } from '../../hooks/useAuth';
+import { Input } from '../ui/Input';
+import { Button } from '../ui/Button';
 import { Mail, Lock, User, Eye, EyeOff, Check, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 

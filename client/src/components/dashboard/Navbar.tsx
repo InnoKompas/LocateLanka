@@ -34,7 +34,7 @@ export function Navbar({ onSidebarToggle }: NavbarProps) {
                 {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.email}
               </p>
               <p className="text-caption text-text-secondary">
-                {user?.email}
+                {user?.role === 'admin' ? 'Administrator' : user?.email}
               </p>
             </div>
             
