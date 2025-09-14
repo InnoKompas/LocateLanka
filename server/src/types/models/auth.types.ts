@@ -4,6 +4,31 @@ interface IUserMethods {
   comparePassword(password: string): Promise<boolean>;
 }
 
+export interface IRateLimit {
+  requestsPerHour: number;
+  requestsPerDay: number;
+  requestsPerMonth: number;
+}
+
+export interface IUsagePeriod {
+  count: number;
+  resetTime: Date;
+}
+
+export interface IUsage {
+  currentHour: IUsagePeriod;
+  currentDay: IUsagePeriod;
+  currentMonth: IUsagePeriod;
+}
+
+export interface ISubscription {
+  plan: 'free' | 'pro' | 'enterprise';
+  status: 'active' | 'inactive' | 'cancelled' | 'expired';
+  startDate: Date;
+  endDate?: Date;
+  rateLimit: IRateLimit;
+}
+
 export interface IUser {
   _id: string;
   email: string;
@@ -13,6 +38,8 @@ export interface IUser {
   role: 'user' | 'admin';
   isActive: boolean;
   lastLogin?: Date;
+  subscription: ISubscription;
+  usage: IUsage;
   createdAt?: Date;
   updatedAt?: Date;
 }

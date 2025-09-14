@@ -1,6 +1,7 @@
 import { User } from '../models/user.model';
 import { ApiKey } from '../models/ApiKey.model';
 import { UsageLog } from '../models/UsageLog.model';
+import { SystemSettings, ISystemSettings } from '../models/SystemSettings.model';
 import { startOfDay, endOfDay, startOfMonth, endOfMonth, subDays, subMonths } from 'date-fns';
 
 export class AdminService {
@@ -351,21 +352,84 @@ export class AdminService {
   }
 
   // System Settings
-  static async getSystemSettings() {
-    // This would typically come from a settings collection
-    return {
-      rateLimits: {
-        free: { requestsPerHour: 100, requestsPerDay: 1000, requestsPerMonth: 10000 },
-        pro: { requestsPerHour: 1000, requestsPerDay: 10000, requestsPerMonth: 100000 },
-        enterprise: { requestsPerHour: 10000, requestsPerDay: 100000, requestsPerMonth: 1000000 }
-      },
-      maintenanceMode: false,
-      globalAnnouncement: null
-    };
+  // System Settings Management
+  static async getSystemSettings(): Promise<ISystemSettings> {
+    try {
+      let settings = await SystemSettings.findOne();
+      
+      if (!settings) {
+        // Create default settings if none exist
+        settings = await SystemSettings.create({
+          rateLimits: {
+            free: {
+              requestsPerHour: 100,
+              requestsPerDay: 1000,
+              requestsPerMonth: 10000
+            },
+            pro: {
+              requestsPerHour: 1000,
+              requestsPerDay: 10000,
+              requestsPerMonth: 100000
+            },
+            enterprise: {
+              requestsPerHour: 10000,
+              requestsPerDay: 100000,
+              requestsPerMonth: 1000000
+            }
+          },
+          maintenanceMode: false,
+          globalAnnouncement: null
+        });
+      }
+      
+      return settings;
+    } catch (error) {
+      console.error('Error getting system settings:', error);
+      throw error;
+    }
   }
 
-  static async updateSystemSettings(settings: any) {
-    // This would typically update a settings collection
-    return settings;
+  static async updateSystemSettings(updates: Partial<ISystemSettings>): Promise<ISystemSettings> {
+    try {
+      let settings = await SystemSettings.findOne();
+      
+      if (!settings) {
+        settings = await this.getSystemSettings();
+      }
+      
+      // Update the settings
+      Object.assign(settings, updates);
+      await settings.save();
+      
+      // If rate limits were updated, we should update existing users
+      if (updates.rateLimits) {
+        await this.updateUserRateLimits(updates.rateLimits);
+      }
+      
+      return settings;
+    } catch (error) {
+      console.error('Error updating system settings:', error);
+      throw error;
+    }
+  }
+
+  // Update all users' rate limits based on their subscription plan
+  private static async updateUserRateLimits(newRateLimits: any): Promise<void> {
+    try {
+      const users = await User.find({});
+      
+      for (const user of users) {
+        const userPlan = user.subscription?.plan || 'free';
+        if (newRateLimits[userPlan]) {
+          user.subscription.rateLimit = newRateLimits[userPlan];
+          await user.save();
+        }
+      }
+      
+      console.log(`Updated rate limits for ${users.length} users`);
+    } catch (error) {
+      console.error('Error updating user rate limits:', error);
+      throw error;
+    }
   }
 }

@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import apiKeyRoutes from './routes/api/keys.routes';
 import analyticsRoutes from './routes/api/analytics.routes';
 import adminRoutes from './routes/admin.routes';
+import subscriptionRoutes from './routes/subscription.routes';
 
 // Configuration
 import { 
@@ -79,6 +80,9 @@ app.use('/api/analytics', analyticsRoutes);
 
 // Admin routes (require admin JWT authentication)
 app.use('/api/admin', adminRoutes);
+
+// Subscription routes
+app.use('/api/subscription', subscriptionRoutes);
 
 // API v1 routes (require API key authentication)
 app.use('/api/v1', apiV1Routes);

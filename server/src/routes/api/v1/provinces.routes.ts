@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { ProvinceController } from '../../../controllers/province.controller';
 import { authenticateApiKey } from '../../../middlewares/auth.middleware';
-import { rateLimitMiddleware } from '../../../middlewares/rateLimit.middleware';
+import { userRateLimitMiddleware } from '../../../middlewares/userRateLimit.middleware';
 
 const router: Router = Router();
 const provinceController = new ProvinceController();
@@ -15,7 +15,7 @@ const provinceController = new ProvinceController();
 router.get(
   '/',
   authenticateApiKey,
-  rateLimitMiddleware,
+  userRateLimitMiddleware,
   provinceController.getAllProvinces
 );
 
@@ -28,7 +28,7 @@ router.get(
 router.get(
   '/:id',
   authenticateApiKey,
-  rateLimitMiddleware,
+  userRateLimitMiddleware,
   provinceController.getProvinceById
 );
 
@@ -41,7 +41,7 @@ router.get(
 router.get(
   '/:id/districts',
   authenticateApiKey,
-  rateLimitMiddleware,
+  userRateLimitMiddleware,
   provinceController.getDistrictsByProvince
 );
 

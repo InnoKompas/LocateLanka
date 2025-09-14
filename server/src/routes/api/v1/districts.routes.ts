@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { DistrictController } from '../../../controllers/district.controller';
 import { authenticateApiKey } from '../../../middlewares/auth.middleware';
-import { rateLimitMiddleware } from '../../../middlewares/rateLimit.middleware';
+import { userRateLimitMiddleware } from '../../../middlewares/userRateLimit.middleware';
 
 const router: Router = Router();
 const districtController = new DistrictController();
@@ -17,7 +17,7 @@ const districtController = new DistrictController();
 router.get(
   '/',
   authenticateApiKey,
-  rateLimitMiddleware,
+  userRateLimitMiddleware,
   districtController.getDistricts
 );
 
@@ -30,7 +30,7 @@ router.get(
 router.get(
   '/:id',
   authenticateApiKey,
-  rateLimitMiddleware,
+  userRateLimitMiddleware,
   districtController.getDistrictById
 );
 
@@ -43,7 +43,7 @@ router.get(
 router.get(
   '/:id/divisions',
   authenticateApiKey,
-  rateLimitMiddleware,
+  userRateLimitMiddleware,
   districtController.getDivisionsByDistrict
 );
 

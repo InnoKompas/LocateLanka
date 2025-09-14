@@ -36,6 +36,8 @@
     "check:admin": "ts-node src/scripts/checkAdminUsers.ts",
     "reset:admin": "ts-node src/scripts/resetAdmin.ts",
     "test:admin-login": "ts-node src/scripts/testAdminLogin.ts",
+    "migrate:subscriptions": "ts-node src/scripts/migrateUserSubscriptions.ts",
+    "init:settings": "ts-node src/scripts/initializeSystemSettings.ts",
     "db:migrate": "echo \"Add migration scripts here\"",
     "logs": "tail -f logs/app.log",
     "clean": "rm -rf dist node_modules/.cache",
