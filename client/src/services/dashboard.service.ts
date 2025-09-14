@@ -1,4 +1,5 @@
-import axios from 'axios';
+import axios, { type AxiosResponse } from 'axios';
+import { handleApiError } from '../utils/errorHandler';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -169,6 +170,9 @@ export interface PlanFeatures {
   limits: {
     apiCalls: number;
     apiKeys: number;
+    requestsPerHour: number;
+    requestsPerDay: number;
+    requestsPerMonth: number;
   };
 }
 
@@ -266,18 +270,33 @@ export const getApiKeyAnalytics = async (keyId: string, period: 'daily' | 'weekl
 
 // Billing API
 export const getBillingInfo = async (): Promise<BillingInfo> => {
-  const response = await api.get('/billing');
-  return response.data;
+  try {
+    const response: AxiosResponse<BillingInfo> = 
+      await api.get('/api/billing');
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
 };
 
 export const getAvailablePlans = async (): Promise<PlanFeatures[]> => {
-  const response = await api.get('/billing/plans');
-  return response.data;
+  try {
+    const response: AxiosResponse<PlanFeatures[]> = 
+      await api.get('/api/billing/plans');
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
 };
 
 export const upgradePlan = async (planId: string): Promise<{ checkoutUrl: string }> => {
-  const response = await api.post('/billing/upgrade', { planId });
-  return response.data;
+  try {
+    const response: AxiosResponse<{ checkoutUrl: string }> = 
+      await api.post('/api/billing/upgrade', { planId });
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
 };
 
 // Profile API

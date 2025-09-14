@@ -6,6 +6,7 @@ import apiKeyRoutes from './routes/api/keys.routes';
 import analyticsRoutes from './routes/api/analytics.routes';
 import adminRoutes from './routes/admin.routes';
 import subscriptionRoutes from './routes/subscription.routes';
+import billingRoutes from './routes/billing.routes';
 
 // Configuration
 import { 
@@ -83,6 +84,9 @@ app.use('/api/admin', adminRoutes);
 
 // Subscription routes
 app.use('/api/subscription', subscriptionRoutes);
+
+// Billing routes (require JWT authentication)
+app.use('/api/billing', billingRoutes);
 
 // API v1 routes (require API key authentication)
 app.use('/api/v1', apiV1Routes);

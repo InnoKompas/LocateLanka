@@ -28,72 +28,100 @@ function PlanCard({ plan, isCurrentPlan, onUpgrade, isUpgrading }: PlanCardProps
   return (
     <Card 
       variant={isCurrentPlan ? 'elevated' : 'default'}
-      className={`relative ${isPopular ? 'ring-2 ring-indigo-500' : ''}`}
+      className={`relative h-full transition-all duration-300 hover:shadow-lg ${
+        isPopular ? 'ring-2 ring-indigo-500 shadow-lg scale-105' : ''
+      } ${isCurrentPlan ? 'border-2 border-green-500' : ''}`}
     >
       {isPopular && (
-        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-          <span className="bg-indigo-500 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center">
+        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+          <span className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-1 rounded-full text-xs font-medium flex items-center shadow-lg">
             <Star size={12} className="mr-1" />
             Most Popular
           </span>
         </div>
       )}
       
-      <CardContent className="pt-8">
-        <div className="text-center mb-6">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+      <CardContent className="pt-8 pb-6 h-full flex flex-col">
+        <div className="text-center mb-6 flex-shrink-0">
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
             {plan.name}
           </h3>
-          <div className="mb-4">
-            <span className="text-3xl font-bold text-gray-900 dark:text-white">
-              ${plan.price}
-            </span>
-            <span className="text-gray-500 dark:text-gray-400">
-              /{plan.currency === 'USD' ? 'month' : plan.currency}
-            </span>
+          <div className="mb-6">
+            <div className="flex items-baseline justify-center">
+              <span className="text-4xl font-bold text-gray-900 dark:text-white">
+                ${plan.price}
+              </span>
+              <span className="text-gray-500 dark:text-gray-400 ml-1">
+                /{plan.currency === 'USD' ? 'month' : plan.currency}
+              </span>
+            </div>
+            {plan.price === 0 && (
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Forever free</p>
+            )}
           </div>
           
           {isCurrentPlan ? (
-            <Button variant="outline" disabled className="w-full">
+            <Button variant="outline" disabled className="w-full h-12 bg-green-50 border-green-200 text-green-700">
+              <Check size={16} className="mr-2" />
               Current Plan
             </Button>
           ) : plan.price === 0 ? (
-            <Button variant="outline" disabled className="w-full">
+            <Button variant="outline" disabled className="w-full h-12">
               Downgrade Available
             </Button>
           ) : (
             <Button 
               variant="primary" 
-              className="w-full"
+              className={`w-full h-12 font-semibold ${
+                isPopular ? 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700' : ''
+              }`}
               onClick={() => onUpgrade(plan.name.toLowerCase())}
               isLoading={isUpgrading}
             >
+              <ArrowRight size={16} className="mr-2" />
               Upgrade to {plan.name}
             </Button>
           )}
         </div>
 
-        <div className="space-y-3">
-          <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
-            <span className="text-sm text-gray-600 dark:text-gray-400">API Calls</span>
-            <span className="font-medium text-gray-900 dark:text-white">
-              {plan.limits.apiCalls === -1 ? 'Unlimited' : plan.limits.apiCalls.toLocaleString()}
-            </span>
-          </div>
-          
-          <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700">
-            <span className="text-sm text-gray-600 dark:text-gray-400">API Keys</span>
-            <span className="font-medium text-gray-900 dark:text-white">
-              {plan.limits.apiKeys}
-            </span>
+        <div className="flex-1 space-y-4">
+          {/* Key Metrics */}
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Monthly API Calls</span>
+              <span className="font-bold text-gray-900 dark:text-white">
+                {plan.limits.apiCalls === -1 ? (
+                  <span className="text-green-600">Unlimited</span>
+                ) : (
+                  plan.limits.apiCalls.toLocaleString()
+                )}
+              </span>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">API Keys</span>
+              <span className="font-bold text-gray-900 dark:text-white">
+                {plan.limits.apiKeys === -1 ? (
+                  <span className="text-green-600">Unlimited</span>
+                ) : (
+                  plan.limits.apiKeys
+                )}
+              </span>
+            </div>
           </div>
 
-          {plan.features.map((feature: string, index: number) => (
-            <div key={index} className="flex items-start space-x-2">
-              <Check size={16} className="text-green-500 mt-0.5 flex-shrink-0" />
-              <span className="text-sm text-gray-600 dark:text-gray-400">{feature}</span>
-            </div>
-          ))}
+          {/* Features */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Features included:</h4>
+            {plan.features.map((feature: string, index: number) => (
+              <div key={index} className="flex items-start space-x-3">
+                <div className="flex-shrink-0 w-5 h-5 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mt-0.5">
+                  <Check size={12} className="text-green-600 dark:text-green-400" />
+                </div>
+                <span className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{feature}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -233,16 +261,19 @@ export function BillingPage() {
           Available Plans
         </h2>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {availablePlans?.map((plan) => (
-            <PlanCard
-              key={plan.name}
-              plan={plan}
-              isCurrentPlan={plan.name === billingInfo?.currentPlan}
-              onUpgrade={handleUpgrade}
-              isUpgrading={isUpgrading && selectedPlan === plan.name.toLowerCase()}
-            />
-          ))}
+        <div className="max-w-6xl mx-auto z-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
+            {availablePlans?.map((plan) => (
+              <div key={plan.name} className="w-full max-w-sm">
+                <PlanCard
+                  plan={plan}
+                  isCurrentPlan={plan.name === billingInfo?.currentPlan}
+                  onUpgrade={handleUpgrade}
+                  isUpgrading={isUpgrading && selectedPlan === plan.name.toLowerCase()}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

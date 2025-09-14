@@ -39,6 +39,7 @@
     "migrate:subscriptions": "ts-node src/scripts/migrateUserSubscriptions.ts",
     "init:settings": "ts-node src/scripts/initializeSystemSettings.ts",
     "test:usage-logs": "ts-node src/scripts/testUsageLogging.ts",
+    "test:billing": "ts-node src/scripts/testBillingEndpoints.ts",
     "db:migrate": "echo \"Add migration scripts here\"",
     "logs": "tail -f logs/app.log",
     "clean": "rm -rf dist node_modules/.cache",
