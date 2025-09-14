@@ -26,7 +26,19 @@ export const errorHandler = (
   }
 
   if (error.name === 'MongoServerError' && (error as any).code === 11000) {
-    const duplicateError = new AppError('Duplicate field value', 409, true, 'DUPLICATE_VALUE');
+    // Extract field name from MongoDB duplicate key error
+    const duplicateField = Object.keys((error as any).keyValue || {})[0];
+    let message = 'Duplicate field value';
+    
+    if (duplicateField) {
+      if (duplicateField === 'hashedKey') {
+        message = 'Duplicate API key generated. Please try again.';
+      } else {
+        message = `Duplicate ${duplicateField}: this value already exists`;
+      }
+    }
+    
+    const duplicateError = new AppError(message, 409, true, 'DUPLICATE_VALUE');
     return sendErrorResponse(res, duplicateError, req);
   }
 

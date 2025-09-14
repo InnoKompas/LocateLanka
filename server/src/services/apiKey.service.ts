@@ -52,16 +52,8 @@ export class ApiKeyService {
       throw new AppError(`Maximum number of API keys reached for ${planName} plan (${apiKeyLimit}). Upgrade your plan to create more API keys.`, 409);
     }
 
-    // Check for duplicate names for this user
-    const existingKey = await ApiKey.findOne({
-      userId: data.userId,
-      name: data.name,
-      isActive: true
-    });
-
-    if (existingKey) {
-      throw new AppError('API key with this name already exists', 400);
-    }
+    // Note: Multiple API keys can have the same name
+    // Only the actual key (hashedKey) needs to be unique
 
     // Generate new API key
     const { key, keyPrefix } = ApiKey.generateKey();

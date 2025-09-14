@@ -151,6 +151,9 @@ ApiKeySchema.index({ userId: 1, isActive: 1 });
 ApiKeySchema.index({ keyPrefix: 1, isActive: 1 });
 ApiKeySchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
+// Unique index on hashedKey to prevent duplicate API keys
+ApiKeySchema.index({ hashedKey: 1 }, { unique: true });
+
 // Pre-save middleware to handle key expiration
 ApiKeySchema.pre('save', function(next) {
   if (this.expiresAt && this.expiresAt < new Date()) {

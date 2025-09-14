@@ -42,8 +42,9 @@ function CreateKeyModal({ isOpen, onClose, onSuccess }: CreateKeyModalProps) {
       onSuccess(newKey);
       onClose();
       setKeyName('');
-    } catch (error) {
-      toast.error('Failed to create API key');
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error?.message || error.message || 'Failed to create API key';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
