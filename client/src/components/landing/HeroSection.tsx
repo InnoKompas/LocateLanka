@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Zap, Code, Play, CheckCircle, Globe, Shield } from 'lucide-react';
+import { ArrowRight, Zap, Code, Play, CheckCircle, Globe, Shield, LayoutDashboard } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import Prism from 'prismjs';
 
 export const HeroSection = () => {
+  const { user, isLoading } = useAuth();
+  const navigate = useNavigate();
   const [activeExample, setActiveExample] = useState(0);
 
   const codeExamples = [
@@ -142,10 +146,27 @@ export const HeroSection = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
             >
-              <Button size="lg" className="flex items-center space-x-2 shadow-lg">
-                <span>Get Started Free</span>
-                <ArrowRight className="w-5 h-5" />
-              </Button>
+              {!isLoading && (
+                user ? (
+                  // Authenticated user - show dashboard button
+                  <Button 
+                    size="lg" 
+                    onClick={() => navigate('/dashboard')}
+                    className="flex items-center space-x-2 shadow-lg"
+                  >
+                    <LayoutDashboard className="w-5 h-5" />
+                    <span>Go to Dashboard</span>
+                  </Button>
+                ) : (
+                  // Unauthenticated user - show get started button
+                  <Link to="/signup">
+                    <Button size="lg" className="flex items-center space-x-2 shadow-lg">
+                      <span>Get Started Free</span>
+                      <ArrowRight className="w-5 h-5" />
+                    </Button>
+                  </Link>
+                )
+              )}
               <Button variant="outline" size="lg" className="flex items-center space-x-2">
                 <Play className="w-5 h-5" />
                 <span>View Live Demo</span>

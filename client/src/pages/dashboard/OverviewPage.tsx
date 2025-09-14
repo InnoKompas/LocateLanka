@@ -1,5 +1,6 @@
 import React from 'react';
 import { useQuery } from 'react-query';
+import { Link } from 'react-router-dom';
 import { 
   Activity, 
   Key, 
@@ -121,9 +122,11 @@ export function OverviewPage() {
           </p>
         </div>
         
-        <Button variant="primary">
-          View Documentation
-        </Button>
+        <Link to="/docs?from=dashboard">
+          <Button variant="primary">
+            View Documentation
+          </Button>
+        </Link>
       </div>
 
       {/* Stats Cards */}
@@ -265,12 +268,14 @@ export function OverviewPage() {
               </div>
             </Button>
             
-            <Button variant="outline" className="justify-start h-auto p-4">
-              <div className="text-left">
-                <p className="font-medium">View Documentation</p>
-                <p className="text-sm text-gray-500 mt-1">Learn how to integrate our API</p>
-              </div>
-            </Button>
+            <Link to="/docs?from=dashboard">
+              <Button variant="outline" className="justify-start h-auto p-4">
+                <div className="text-left">
+                  <p className="font-medium">View Documentation</p>
+                  <p className="text-sm text-gray-500 mt-1">Learn how to integrate our API</p>
+                </div>
+              </Button>
+            </Link>
             
             <Button variant="outline" className="justify-start h-auto p-4">
               <div className="text-left">

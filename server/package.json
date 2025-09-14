@@ -28,6 +28,7 @@
     "docker:run": "docker run -p 3000:3000 lankalocate-server",
     "docker:prod": "docker run -e NODE_ENV=production -p 3000:3000 lankalocate-server",
     "seed:apikey": "ts-node src/scripts/seedApiKey.ts",
+    "seed:usage": "ts-node src/scripts/seedUsageData.ts",
     "db:migrate": "echo \"Add migration scripts here\"",
     "logs": "tail -f logs/app.log",
     "clean": "rm -rf dist node_modules/.cache",

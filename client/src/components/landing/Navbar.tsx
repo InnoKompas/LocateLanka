@@ -38,6 +38,10 @@ export const Navbar = () => {
     { name: 'Contact', id: 'contact' }
   ];
 
+  const externalLinks = [
+    { name: 'Documentation', href: '/docs' }
+  ];
+
   return (
     <motion.nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -77,6 +81,16 @@ export const Navbar = () => {
                 {link.name}
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-indigo-600 transition-all duration-300 group-hover:w-full"></span>
               </button>
+            ))}
+            {externalLinks.map((link) => (
+              <Link 
+                key={link.href}
+                to={link.href}
+                className="text-body-sm text-text-secondary hover:text-text-primary transition-colors relative group"
+              >
+                {link.name}
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-indigo-600 transition-all duration-300 group-hover:w-full"></span>
+              </Link>
             ))}
           </div>
 
@@ -164,6 +178,16 @@ export const Navbar = () => {
               >
                 {link.name}
               </button>
+            ))}
+            {externalLinks.map((link) => (
+              <Link 
+                key={link.href}
+                to={link.href}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block w-full text-left text-body-sm text-text-secondary hover:text-text-primary transition-colors py-2"
+              >
+                {link.name}
+              </Link>
             ))}
             <div className="pt-4 border-t border-border space-y-2">
               {!isLoading && (

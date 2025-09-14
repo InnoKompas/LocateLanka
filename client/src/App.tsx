@@ -15,6 +15,7 @@ import { ApiKeysPage } from './pages/dashboard/ApiKeysPage';
 import { UsageAnalyticsPage } from './pages/dashboard/UsageAnalyticsPage';
 import { BillingPage } from './pages/dashboard/BillingPage';
 import { ProfileSettingsPage } from './pages/dashboard/ProfileSettingsPage';
+import { DocsPage } from './pages/DocsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -85,6 +86,16 @@ export default function App() {
                   element={
                     <PublicRoute>
                       <LandingPage />
+                    </PublicRoute>
+                  }
+                />
+
+                {/* Documentation Route */}
+                <Route
+                  path="/docs"
+                  element={
+                    <PublicRoute>
+                      <DocsPage />
                     </PublicRoute>
                   }
                 />

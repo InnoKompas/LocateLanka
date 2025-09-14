@@ -1,0 +1,1 @@
+import { DocsSection } from "../shared/DocsSection"; export const AddressAutocompleteGuide = () => { return ( <DocsSection title="Address Autocomplete" description="Build autocomplete functionality."> <div className="bg-surface border border-border rounded-lg p-6"> <p className="text-text-secondary">Address autocomplete guide coming soon...</p> </div> </DocsSection> ); };

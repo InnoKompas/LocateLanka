@@ -923,7 +923,17 @@ code[class*="language-"] {
     padding: 0 var(--spacing-4);
   }
 
+  .docs-container {
+    min-width: 100vw;
+    margin: 0 auto;
+    padding: 0 var(--spacing-4);
+  }
+
   @media (min-width: 640px) {
+    .docs-container {
+      padding: 0 var(--spacing-6);
+    }
+
     .container {
       padding: 0 var(--spacing-6);
     }
