@@ -38,6 +38,11 @@ const initializeSystemSettings = async (): Promise<void> => {
           requestsPerMonth: 1000000
         }
       },
+      apiKeyLimits: {
+        free: 2,
+        pro: 10,
+        enterprise: -1
+      },
       maintenanceMode: false,
       globalAnnouncement: null
     });

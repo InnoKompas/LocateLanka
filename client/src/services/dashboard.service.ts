@@ -291,8 +291,26 @@ export const getAvailablePlans = async (): Promise<PlanFeatures[]> => {
 
 export const upgradePlan = async (planId: string): Promise<{ checkoutUrl: string }> => {
   try {
-    const response: AxiosResponse<{ checkoutUrl: string }> = 
+    const response: AxiosResponse<{ checkoutUrl: string }> =
       await api.post('/api/billing/upgrade', { planId });
+    return response.data;
+  } catch (error) {
+    throw handleApiError(error);
+  }
+};
+
+// API Key Limits
+export interface ApiKeyLimits {
+  current: number;
+  limit: number;
+  plan: string;
+  canCreate: boolean;
+}
+
+export const getApiKeyLimits = async (): Promise<ApiKeyLimits> => {
+  try {
+    const response: AxiosResponse<ApiKeyLimits> = 
+      await api.get('/api/keys/usage/limits');
     return response.data;
   } catch (error) {
     throw handleApiError(error);

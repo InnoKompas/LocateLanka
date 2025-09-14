@@ -19,6 +19,13 @@ router.use(rateLimitMiddleware);
 router.get('/usage/total', ApiKeyController.getTotalUsage);
 
 /**
+ * @route   GET /api/keys/usage/limits
+ * @desc    Get user's API key usage and limits based on subscription
+ * @access  Private (JWT required)
+ */
+router.get('/usage/limits', ApiKeyController.getApiKeyLimits);
+
+/**
  * @route   POST /api/keys
  * @desc    Create a new API key
  * @access  Private (JWT required)

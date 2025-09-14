@@ -17,7 +17,8 @@ import {
   getApiKeys, 
   createApiKey, 
   revokeApiKey,
-  type ApiKey 
+  getApiKeyLimits,
+  type ApiKey
 } from '../../services/dashboard.service';
 
 interface CreateKeyModalProps {
@@ -287,10 +288,12 @@ export function ApiKeysPage() {
   const queryClient = useQueryClient();
 
   const { data: apiKeys, isLoading } = useQuery('apiKeys', getApiKeys);
+  const { data: apiKeyLimits, isLoading: limitsLoading } = useQuery('apiKeyLimits', getApiKeyLimits);
 
   const revokeMutation = useMutation(revokeApiKey, {
     onSuccess: () => {
       queryClient.invalidateQueries('apiKeys');
+      queryClient.invalidateQueries('apiKeyLimits');
       toast.success('API key revoked successfully');
     },
     onError: () => {
@@ -301,13 +304,14 @@ export function ApiKeysPage() {
 
   const handleCreateSuccess = (newKey?: ApiKey) => {
     queryClient.invalidateQueries('apiKeys');
+    queryClient.invalidateQueries('apiKeyLimits');
     if (newKey) {
       setNewlyCreatedKey(newKey);
       setShowNewKeyModal(true);
     }
   };
 
-  const canCreateMore = (apiKeys?.length || 0) < 5; // Server allows up to 5 keys
+  const canCreateMore = apiKeyLimits?.canCreate ?? false;
 
   if (isLoading) {
     return (
@@ -369,6 +373,23 @@ export function ApiKeysPage() {
         </CardContent>
       </Card>
 
+      {/* API Keys Usage Header */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Your API Keys
+        </h2>
+        {!limitsLoading && apiKeyLimits && (
+          <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+            <span>
+              {apiKeyLimits.current} / {apiKeyLimits.limit === -1 ? '∞' : apiKeyLimits.limit} used
+            </span>
+            <span className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full capitalize">
+              {apiKeyLimits.plan}
+            </span>
+          </div>
+        )}
+      </div>
+
       {/* API Keys List */}
       <div className="space-y-4">
         {apiKeys && apiKeys.length > 0 ? (
@@ -413,10 +434,15 @@ export function ApiKeysPage() {
               <AlertCircle className="text-yellow-500" size={20} />
               <div>
                 <p className="font-medium text-gray-900 dark:text-white">
-                  Key Limit Reached
+                  API Key Limit Reached
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  You've reached the maximum of 5 API keys. Revoke an existing key to create a new one.
+                  You've reached the maximum of {apiKeyLimits?.limit} API keys for your {apiKeyLimits?.plan} plan. 
+                  {apiKeyLimits?.plan === 'free' ? (
+                    <> Upgrade to Pro for 10 API keys or Enterprise for unlimited keys.</>
+                  ) : (
+                    <> Revoke an existing key to create a new one.</>
+                  )}
                 </p>
               </div>
             </div>

@@ -150,6 +150,11 @@ export interface SystemSettings {
     pro: { requestsPerHour: number; requestsPerDay: number; requestsPerMonth: number };
     enterprise: { requestsPerHour: number; requestsPerDay: number; requestsPerMonth: number };
   };
+  apiKeyLimits: {
+    free: number;
+    pro: number;
+    enterprise: number;
+  };
   maintenanceMode: boolean;
   globalAnnouncement: string | null;
 }

@@ -72,6 +72,19 @@ export const AdminSettingsPage = () => {
     setHasChanges(true);
   };
 
+  const handleApiKeyLimitChange = (plan: 'free' | 'pro' | 'enterprise', value: number) => {
+    if (!settings) return;
+    
+    setSettings(prev => ({
+      ...prev!,
+      apiKeyLimits: {
+        ...prev!.apiKeyLimits,
+        [plan]: value
+      }
+    }));
+    setHasChanges(true);
+  };
+
   const handleSaveSettings = () => {
     if (settings) {
       updateSettingsMutation.mutate(settings);
@@ -199,6 +212,90 @@ export const AdminSettingsPage = () => {
                         className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-sm text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-primary-100"
                       />
                     </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* API Key Limits Configuration */}
+        <Card>
+          <CardHeader 
+            title="API Key Limits"
+            description="Configure maximum number of API keys per subscription plan"
+          />
+          <CardContent>
+            <div className="space-y-6">
+              {Object.entries(settings.apiKeyLimits || {}).map(([plan, limit]) => (
+                <div key={plan} className="border border-border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-semibold text-text-primary capitalize">
+                      {plan} Plan
+                    </h4>
+                    <Badge variant={plan === 'free' ? 'gray' : plan === 'pro' ? 'primary' : 'success'}>
+                      {plan.toUpperCase()}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center space-x-4">
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-text-secondary mb-2">
+                        Maximum API Keys
+                      </label>
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="number"
+                          value={limit === -1 ? '' : limit}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? -1 : parseInt(e.target.value) || 0;
+                            handleApiKeyLimitChange(
+                              plan as 'free' | 'pro' | 'enterprise',
+                              value
+                            );
+                          }}
+                          placeholder={limit === -1 ? 'Unlimited' : ''}
+                          className="w-32 px-3 py-2 bg-surface border border-border rounded-lg text-sm text-text-primary focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-primary-100"
+                        />
+                        {plan === 'enterprise' && (
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id={`unlimited-${plan}`}
+                              checked={limit === -1}
+                              onChange={(e) => {
+                                handleApiKeyLimitChange(
+                                  plan as 'free' | 'pro' | 'enterprise',
+                                  e.target.checked ? -1 : 10
+                                );
+                              }}
+                              className="rounded border-border text-primary focus:ring-primary"
+                            />
+                            <label 
+                              htmlFor={`unlimited-${plan}`}
+                              className="text-sm text-text-secondary cursor-pointer"
+                            >
+                              Unlimited
+                            </label>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="text-right">
+                      <p className="text-sm text-text-secondary">Current Limit</p>
+                      <p className="text-lg font-semibold text-text-primary">
+                        {limit === -1 ? '∞' : limit}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-3 p-3 bg-surface-variant rounded-lg">
+                    <p className="text-xs text-text-secondary">
+                      {plan === 'free' && 'Free users will be limited to this number of API keys'}
+                      {plan === 'pro' && 'Pro subscribers can create up to this many API keys'}
+                      {plan === 'enterprise' && 'Enterprise users get this API key allowance'}
+                    </p>
                   </div>
                 </div>
               ))}

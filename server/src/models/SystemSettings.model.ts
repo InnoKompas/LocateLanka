@@ -6,6 +6,12 @@ export interface IRateLimit {
   requestsPerMonth: number;
 }
 
+export interface IApiKeyLimits {
+  free: number;
+  pro: number;
+  enterprise: number;
+}
+
 export interface ISystemSettings {
   _id?: string;
   rateLimits: {
@@ -13,6 +19,7 @@ export interface ISystemSettings {
     pro: IRateLimit;
     enterprise: IRateLimit;
   };
+  apiKeyLimits: IApiKeyLimits;
   maintenanceMode: boolean;
   globalAnnouncement?: string;
   createdAt?: Date;
@@ -65,6 +72,20 @@ const systemSettingsSchema = new Schema<ISystemSettings>({
         requestsPerDay: 100000,
         requestsPerMonth: 1000000
       }
+    }
+  },
+  apiKeyLimits: {
+    free: {
+      type: Number,
+      default: 2
+    },
+    pro: {
+      type: Number,
+      default: 10
+    },
+    enterprise: {
+      type: Number,
+      default: -1 // Unlimited
     }
   },
   maintenanceMode: {

@@ -280,4 +280,30 @@ export class ApiKeyController {
       }
     });
   });
+
+  /**
+   * Get user's API key limits and current usage
+   */
+  static getApiKeyLimits = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'User authentication required'
+        }
+      });
+      return;
+    }
+
+    const usage = await ApiKeyService.getUserApiKeyUsage(userId);
+
+    res.json({
+      success: true,
+      data: usage,
+      message: 'API key limits retrieved successfully'
+    });
+  });
 }

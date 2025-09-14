@@ -1,4 +1,6 @@
 import { ApiKey, IApiKey } from '../models/ApiKey.model';
+import { User } from '../models/user.model';
+import { SystemSettings } from '../models/SystemSettings.model';
 import { AppError, NotFoundError } from '../utils/errors';
 import mongoose from 'mongoose';
 
@@ -30,14 +32,24 @@ export class ApiKeyService {
    * Create a new API key for a user
    */
   static async createApiKey(data: CreateApiKeyData): Promise<ApiKeyWithPlainKey> {
-    // Check if user has reached the maximum number of API keys (e.g., 5)
+    // Get user to check subscription limits
+    const user = await User.findById(data.userId);
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    // Get API key limit based on subscription plan (with admin settings)
+    const apiKeyLimit = await this.getApiKeyLimitFromSettings(user.subscription?.plan || 'free');
+    
+    // Check if user has reached the maximum number of API keys
     const existingKeysCount = await ApiKey.countDocuments({ 
       userId: data.userId, 
       isActive: true 
     });
     
-    if (existingKeysCount >= 5) {
-      throw new AppError('Maximum number of API keys reached (5)', 400);
+    if (apiKeyLimit !== -1 && existingKeysCount >= apiKeyLimit) {
+      const planName = (user.subscription?.plan || 'free').charAt(0).toUpperCase() + (user.subscription?.plan || 'free').slice(1);
+      throw new AppError(`Maximum number of API keys reached for ${planName} plan (${apiKeyLimit}). Upgrade your plan to create more API keys.`, 409);
     }
 
     // Check for duplicate names for this user
@@ -321,5 +333,63 @@ export class ApiKeyService {
     );
 
     return result.modifiedCount;
+  }
+
+  /**
+   * Get API key limit based on subscription plan
+   */
+  private static getApiKeyLimitForPlan(plan: string): number {
+    const limits = {
+      free: 2,
+      pro: 10,
+      enterprise: -1 // Unlimited
+    };
+
+    return limits[plan as keyof typeof limits] || limits.free;
+  }
+
+  /**
+   * Get API key limit from system settings (admin configurable)
+   */
+  static async getApiKeyLimitFromSettings(plan: string): Promise<number> {
+    try {
+      const settings = await SystemSettings.findOne();
+      if (settings && settings.apiKeyLimits && settings.apiKeyLimits[plan as keyof typeof settings.apiKeyLimits]) {
+        return settings.apiKeyLimits[plan as keyof typeof settings.apiKeyLimits];
+      }
+      return this.getApiKeyLimitForPlan(plan);
+    } catch (error) {
+      // Fallback to default limits if settings not available
+      return this.getApiKeyLimitForPlan(plan);
+    }
+  }
+
+  /**
+   * Get user's current API key usage and limits
+   */
+  static async getUserApiKeyUsage(userId: string): Promise<{
+    current: number;
+    limit: number;
+    plan: string;
+    canCreate: boolean;
+  }> {
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    const plan = user.subscription?.plan || 'free';
+    const limit = await this.getApiKeyLimitFromSettings(plan);
+    const current = await ApiKey.countDocuments({ 
+      userId, 
+      isActive: true 
+    });
+
+    return {
+      current,
+      limit,
+      plan,
+      canCreate: limit === -1 || current < limit
+    };
   }
 }
