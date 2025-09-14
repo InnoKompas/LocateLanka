@@ -26,7 +26,9 @@ export const usageLogger = (req: UsageLogRequest, res: Response, next: NextFunct
       try {
         // Only log if we have user/API key info
         if ((req.user?.id || req.apiKey?.userId) && shouldLogEndpoint(req.originalUrl)) {
-          const userId = req.user?.id || req.apiKey?.userId?.toString();
+          // Handle both cases: userId as ObjectId or populated user object
+          const userId = req.user?.id || 
+                        (typeof req.apiKey?.userId === 'string' ? req.apiKey.userId : req.apiKey?.userId?._id?.toString());
           const apiKeyId = req.apiKey?._id?.toString();
           
           await UsageLog.create({

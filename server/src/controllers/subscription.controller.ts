@@ -1,4 +1,4 @@
-import { Response, NextFunction } from 'express';
+import { Response } from 'express';
 import { SubscriptionService } from '../services/subscription.service';
 import { AuthenticatedRequest } from '../types/auth.types';
 import { handleApiError } from '../utils/errorHandler';
@@ -8,9 +8,9 @@ export class SubscriptionController {
   /**
    * Get current user's subscription info
    */
-  static async getUserSubscription(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  static async getUserSubscription(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const userId = req.user?.userId || req.user?.id;
+      const userId = req.user?._id;
       
       if (!userId) {
         res.status(401).json({
@@ -49,7 +49,7 @@ export class SubscriptionController {
   /**
    * Update user's subscription plan (Admin only)
    */
-  static async updateUserPlan(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  static async updateUserPlan(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const { userId } = req.params;
       const { plan } = req.body;
@@ -61,6 +61,17 @@ export class SubscriptionController {
           error: {
             code: 'INVALID_PLAN',
             message: 'Invalid subscription plan. Must be one of: free, pro, enterprise'
+          }
+        });
+        return;
+      }
+
+      if (!userId) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: 'MISSING_USER_ID',
+            message: 'User ID is required'
           }
         });
         return;
@@ -98,9 +109,9 @@ export class SubscriptionController {
   /**
    * Get rate limit status for current user
    */
-  static async getRateLimitStatus(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  static async getRateLimitStatus(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      const userId = req.user?.userId || req.user?.id;
+      const userId = req.user?._id;
       
       if (!userId) {
         res.status(401).json({
@@ -138,7 +149,7 @@ export class SubscriptionController {
   /**
    * Get available subscription plans
    */
-  static async getAvailablePlans(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+  static async getAvailablePlans(_req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const planLimits = SubscriptionService.getPlanLimits();
       

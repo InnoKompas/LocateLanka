@@ -394,12 +394,34 @@ export class AdminService {
       let settings = await SystemSettings.findOne();
       
       if (!settings) {
-        settings = await this.getSystemSettings();
+        // Create new settings if none exist
+        settings = await SystemSettings.create({
+          rateLimits: {
+            free: {
+              requestsPerHour: 100,
+              requestsPerDay: 1000,
+              requestsPerMonth: 10000
+            },
+            pro: {
+              requestsPerHour: 1000,
+              requestsPerDay: 10000,
+              requestsPerMonth: 100000
+            },
+            enterprise: {
+              requestsPerHour: 10000,
+              requestsPerDay: 100000,
+              requestsPerMonth: 1000000
+            }
+          },
+          maintenanceMode: false,
+          globalAnnouncement: null,
+          ...updates
+        });
+      } else {
+        // Update existing settings
+        Object.assign(settings, updates);
+        await settings.save();
       }
-      
-      // Update the settings
-      Object.assign(settings, updates);
-      await settings.save();
       
       // If rate limits were updated, we should update existing users
       if (updates.rateLimits) {

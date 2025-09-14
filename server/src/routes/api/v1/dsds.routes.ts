@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { DSDController } from '../../../controllers/dsd.controller';
 import { authenticateApiKey } from '../../../middlewares/auth.middleware';
 import { userRateLimitMiddleware } from '../../../middlewares/userRateLimit.middleware';
+import { usageLogger } from '../../../middlewares/usageLogger.middleware';
 
 const router: Router = Router();
 const dsdController = new DSDController();
@@ -19,6 +20,7 @@ const dsdController = new DSDController();
 router.get(
   '/',
   authenticateApiKey,
+  usageLogger,
   userRateLimitMiddleware,
   dsdController.getDSDs
 );
@@ -32,6 +34,7 @@ router.get(
 router.get(
   '/:id',
   authenticateApiKey,
+  usageLogger,
   userRateLimitMiddleware,
   dsdController.getDSDById
 );
@@ -47,6 +50,7 @@ router.get(
 router.get(
   '/:id/divisions',
   authenticateApiKey,
+  usageLogger,
   userRateLimitMiddleware,
   dsdController.getDivisionsByDSD
 );

@@ -61,7 +61,7 @@ export const userRateLimitMiddleware = async (
     if (!rateLimitCheck.allowed) {
       const exceedsHourly = rateLimitCheck.usage.hour >= rateLimitCheck.limits.requestsPerHour;
       const exceedsDaily = rateLimitCheck.usage.day >= rateLimitCheck.limits.requestsPerDay;
-      const exceedsMonthly = rateLimitCheck.usage.month >= rateLimitCheck.limits.requestsPerMonth;
+      // const exceedsMonthly = rateLimitCheck.usage.month >= rateLimitCheck.limits.requestsPerMonth;
 
       let limitType = 'monthly';
       let resetTime = rateLimitCheck.resetTimes.month;

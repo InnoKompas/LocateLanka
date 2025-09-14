@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { DivisionController } from '../../../controllers/division.controller';
 import { authenticateApiKey } from '../../../middlewares/auth.middleware';
 import { userRateLimitMiddleware } from '../../../middlewares/userRateLimit.middleware';
+import { usageLogger } from '../../../middlewares/usageLogger.middleware';
 
 const router: Router = Router();
 const divisionController = new DivisionController();
@@ -21,6 +22,7 @@ const divisionController = new DivisionController();
 router.get(
   '/',
   authenticateApiKey,
+  usageLogger,
   userRateLimitMiddleware,
   divisionController.getDivisions
 );
@@ -34,6 +36,7 @@ router.get(
 router.get(
   '/:id',
   authenticateApiKey,
+  usageLogger,
   userRateLimitMiddleware,
   divisionController.getDivisionById
 );
@@ -49,6 +52,7 @@ router.get(
 router.get(
   '/search',
   authenticateApiKey,
+  usageLogger,
   userRateLimitMiddleware,
   divisionController.searchDivisions
 );

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { ProvinceController } from '../../../controllers/province.controller';
 import { authenticateApiKey } from '../../../middlewares/auth.middleware';
 import { userRateLimitMiddleware } from '../../../middlewares/userRateLimit.middleware';
+import { usageLogger } from '../../../middlewares/usageLogger.middleware';
 
 const router: Router = Router();
 const provinceController = new ProvinceController();
@@ -15,6 +16,7 @@ const provinceController = new ProvinceController();
 router.get(
   '/',
   authenticateApiKey,
+  usageLogger,
   userRateLimitMiddleware,
   provinceController.getAllProvinces
 );
@@ -28,6 +30,7 @@ router.get(
 router.get(
   '/:id',
   authenticateApiKey,
+  usageLogger,
   userRateLimitMiddleware,
   provinceController.getProvinceById
 );
@@ -41,6 +44,7 @@ router.get(
 router.get(
   '/:id/districts',
   authenticateApiKey,
+  usageLogger,
   userRateLimitMiddleware,
   provinceController.getDistrictsByProvince
 );

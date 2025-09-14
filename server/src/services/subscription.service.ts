@@ -47,7 +47,7 @@ export class SubscriptionService {
         endDate.setDate(endDate.getDate() + 30);
         user.subscription.endDate = endDate;
       } else {
-        user.subscription.endDate = undefined;
+        delete user.subscription.endDate;
       }
 
       // Reset usage counters when plan changes
@@ -257,7 +257,7 @@ export class SubscriptionService {
         // Downgrade to free plan
         user.subscription.plan = 'free';
         user.subscription.status = 'expired';
-        user.subscription.endDate = undefined;
+        delete user.subscription.endDate;
         await user.save();
         
         logger.info(`User ${userId} subscription expired, downgraded to free plan`);
