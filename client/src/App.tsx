@@ -6,7 +6,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { NewLandingPage } from './pages/NewLandingPage';
+import { LandingPage } from './pages/LandingPage';
 import { SignInPage } from './pages/auth/SignInPage';
 import { SignUpPage } from './pages/auth/SignUpPage';
 import { DashboardLayout } from './components/dashboard/DashboardLayout';
@@ -40,6 +40,21 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
+  const { isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  // Allow authenticated users to view public pages (like landing page)
+  return <>{children}</>;
+}
+
+function AuthRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
@@ -50,6 +65,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // Redirect authenticated users away from auth pages to dashboard
   return !user ? <>{children}</> : <Navigate to="/dashboard" />;
 }
 
@@ -68,7 +84,7 @@ export default function App() {
                   path="/"
                   element={
                     <PublicRoute>
-                      <NewLandingPage />
+                      <LandingPage />
                     </PublicRoute>
                   }
                 />
@@ -77,17 +93,17 @@ export default function App() {
                 <Route
                   path="/signin"
                   element={
-                    <PublicRoute>
+                    <AuthRoute>
                       <SignInPage />
-                    </PublicRoute>
+                    </AuthRoute>
                   }
                 />
                 <Route
                   path="/signup"
                   element={
-                    <PublicRoute>
+                    <AuthRoute>
                       <SignUpPage />
-                    </PublicRoute>
+                    </AuthRoute>
                   }
                 />
 

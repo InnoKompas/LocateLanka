@@ -249,7 +249,7 @@ export const getUsageData = async (period: 'daily' | 'weekly' | 'monthly' = 'dai
   return response.data;
 };
 
-export const getTopEndpoints = async (): Promise<{ endpoint: string; calls: number }[]> => {
+export const getTopEndpoints = async (): Promise<{ endpoint: string; calls: number; trend?: number }[]> => {
   const response = await api.get('/api/analytics/endpoints');
   return response.data;
 };

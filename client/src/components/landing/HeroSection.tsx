@@ -231,7 +231,7 @@ export const HeroSection = () => {
               </div>
 
               {/* Code Content */}
-              <div className="p-6">
+              <div className="p-0">
                 <pre className="text-sm overflow-x-auto">
                   <code className="language-javascript">
                     {codeExamples[activeExample].code}

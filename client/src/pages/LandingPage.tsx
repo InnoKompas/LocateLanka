@@ -9,7 +9,7 @@ import {
   Footer
 } from '../components/landing';
 
-export function NewLandingPage() {
+export function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />

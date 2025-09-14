@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sun, Moon, MapPin } from 'lucide-react';
+import { Sun, Moon, MapPin, LayoutDashboard } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../ui/Button';
 
 export const Navbar = () => {
   const { theme, toggleTheme } = useTheme();
+  const { user, isLoading } = useAuth();
+  const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -87,16 +90,34 @@ export const Navbar = () => {
             >
               {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
             </Button>
-            <Link to="/signin">
-              <Button variant="ghost" size="sm">
-                Sign In
-              </Button>
-            </Link>
-            <Link to="/signup">
-              <Button size="sm">
-                Sign Up Free
-              </Button>
-            </Link>
+            
+            {!isLoading && (
+              user ? (
+                // Authenticated user - show dashboard button
+                <Button 
+                  size="sm" 
+                  onClick={() => navigate('/dashboard')}
+                  className="flex items-center space-x-2"
+                >
+                  <LayoutDashboard size={16} />
+                  <span>Go to Dashboard</span>
+                </Button>
+              ) : (
+                // Unauthenticated user - show sign in/up buttons
+                <>
+                  <Link to="/signin">
+                    <Button variant="ghost" size="sm">
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link to="/signup">
+                    <Button size="sm">
+                      Sign Up Free
+                    </Button>
+                  </Link>
+                </>
+              )
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -145,16 +166,36 @@ export const Navbar = () => {
               </button>
             ))}
             <div className="pt-4 border-t border-border space-y-2">
-              <Link to="/signin">
-                <Button variant="ghost" size="sm" className="w-full justify-start">
-                  Sign In
-                </Button>
-              </Link>
-              <Link to="/signup">
-                <Button size="sm" className="w-full">
-                  Sign Up Free
-                </Button>
-              </Link>
+              {!isLoading && (
+                user ? (
+                  // Authenticated user - show dashboard button
+                  <Button 
+                    size="sm" 
+                    onClick={() => {
+                      navigate('/dashboard');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full flex items-center justify-center space-x-2"
+                  >
+                    <LayoutDashboard size={16} />
+                    <span>Go to Dashboard</span>
+                  </Button>
+                ) : (
+                  // Unauthenticated user - show sign in/up buttons
+                  <>
+                    <Link to="/signin">
+                      <Button variant="ghost" size="sm" className="w-full justify-start">
+                        Sign In
+                      </Button>
+                    </Link>
+                    <Link to="/signup">
+                      <Button size="sm" className="w-full">
+                        Sign Up Free
+                      </Button>
+                    </Link>
+                  </>
+                )
+              )}
             </div>
           </div>
         </motion.div>

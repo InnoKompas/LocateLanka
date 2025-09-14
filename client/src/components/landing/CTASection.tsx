@@ -1,9 +1,13 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, CheckCircle, Zap, Shield, Clock } from 'lucide-react';
+import { ArrowRight, CheckCircle, Zap, Shield, Clock, LayoutDashboard } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../ui/Button';
 
 export const CTASection = () => {
+  const { user, isLoading } = useAuth();
+  const navigate = useNavigate();
+  
   const benefits = [
     {
       icon: <Zap className="w-5 h-5" />,
@@ -85,16 +89,32 @@ export const CTASection = () => {
             transition={{ duration: 0.8, delay: 0.4 }}
             viewport={{ once: true }}
           >
-            <Link to="/signup">
-              <Button 
-                size="lg" 
-                variant="secondary" 
-                className="bg-white text-indigo-600 hover:bg-gray-100 shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 flex items-center space-x-2"
-              >
-                <span>Sign Up Free</span>
-                <ArrowRight className="w-5 h-5" />
-              </Button>
-            </Link>
+            {!isLoading && (
+              user ? (
+                // Authenticated user - show dashboard button
+                <Button 
+                  size="lg" 
+                  variant="secondary" 
+                  onClick={() => navigate('/dashboard')}
+                  className="bg-white text-indigo-600 hover:bg-gray-100 shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 flex items-center space-x-2"
+                >
+                  <LayoutDashboard className="w-5 h-5" />
+                  <span>Go to Dashboard</span>
+                </Button>
+              ) : (
+                // Unauthenticated user - show sign up button
+                <Link to="/signup">
+                  <Button 
+                    size="lg" 
+                    variant="secondary" 
+                    className="bg-white text-indigo-600 hover:bg-gray-100 shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 flex items-center space-x-2"
+                  >
+                    <span>Sign Up Free</span>
+                    <ArrowRight className="w-5 h-5" />
+                  </Button>
+                </Link>
+              )
+            )}
             <Button 
               size="lg" 
               variant="outline" 

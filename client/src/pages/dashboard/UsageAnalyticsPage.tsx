@@ -335,10 +335,14 @@ export function UsageAnalyticsPage() {
                         {percentage}%
                       </td>
                       <td className="text-right py-3 px-4">
-                        <span className="inline-flex items-center text-green-600 text-xs">
-                          <TrendingUp size={12} className="mr-1" />
-                          +{Math.floor(Math.random() * 20)}%
-                        </span>
+                        {endpoint.trend !== undefined && (
+                          <span className={`inline-flex items-center text-xs ${
+                            endpoint.trend >= 0 ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            <TrendingUp size={12} className="mr-1" />
+                            {endpoint.trend >= 0 ? '+' : ''}{endpoint.trend}%
+                          </span>
+                        )}
                       </td>
                     </tr>
                   );

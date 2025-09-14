@@ -25,23 +25,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check if user is authenticated on app start
     const initializeAuth = async () => {
       try {
-        if (authService.isAuthenticated()) {
-          const currentUser = authService.getCurrentUser();
-          if (currentUser) {
-            setUser(currentUser);
-          } else {
-            // Try to refresh token
+        const currentUser = authService.getCurrentUser();
+        const isAuthenticated = authService.isAuthenticated();
+        
+        if (currentUser && isAuthenticated) {
+          // User has valid token and user data
+          setUser(currentUser);
+        } else if (currentUser) {
+          // User data exists but token might be expired, try to refresh
+          try {
             await authService.refreshToken();
             const refreshedUser = authService.getCurrentUser();
             if (refreshedUser) {
               setUser(refreshedUser);
+            } else {
+              setUser(null);
             }
+          } catch (refreshError) {
+            // Refresh failed, clear everything
+            localStorage.removeItem('accessToken');
+            setUser(null);
           }
+        } else {
+          setUser(null);
         }
+        // If no user data and no valid token, user is not authenticated
       } catch (error) {
         console.warn('Failed to initialize auth:', error);
         // Clear any invalid tokens
         localStorage.removeItem('accessToken');
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
