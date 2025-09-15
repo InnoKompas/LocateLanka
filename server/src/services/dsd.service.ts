@@ -1,5 +1,7 @@
 import { DSD, Division } from '../types/location.types';
 import { DatabaseService } from './database.service';
+import { District as DistrictModel } from '../models/District.model';
+import { Province as ProvinceModel } from '../models/Province.model';
 
 export class DSDService {
   private dbService: DatabaseService;
@@ -17,14 +19,27 @@ export class DSDService {
       
       const pipeline = [
         {
+          $lookup: {
+            from: 'districts',
+            localField: 'properties.DISTRICT_C',
+            foreignField: '_id',
+            as: 'district'
+          }
+        },
+        {
+          $lookup: {
+            from: 'provinces',
+            localField: 'properties.PROVINCE_C',
+            foreignField: '_id',
+            as: 'province'
+          }
+        },
+        {
           $group: {
             _id: {
-              code: '$properties.DSD_C',
               name: '$properties.DSD_N',
-              districtCode: '$properties.DISTRICT_C',
-              districtName: '$properties.DISTRICT_N',
-              provinceCode: '$properties.PROVINCE_C',
-              provinceName: '$properties.PROVINCE_N'
+              district: { $arrayElemAt: ['$district', 0] },
+              province: { $arrayElemAt: ['$province', 0] }
             },
             divisionCount: { $sum: 1 }
           }
@@ -32,19 +47,19 @@ export class DSDService {
         {
           $project: {
             _id: 0,
-            id: '$_id.code',
+            id: '$_id.name',
             name: '$_id.name',
             nameEn: '$_id.name',
-            code: '$_id.code',
-            districtId: '$_id.districtCode',
-            districtName: '$_id.districtName',
-            provinceId: '$_id.provinceCode',
-            provinceName: '$_id.provinceName',
+            code: '$_id.name',
+            districtId: '$_id.district.code',
+            districtName: '$_id.district.name',
+            provinceId: '$_id.province.code',
+            provinceName: '$_id.province.name',
             divisionCount: 1
           }
         },
         {
-          $sort: { provinceId: 1, districtId: 1, code: 1 }
+          $sort: { provinceId: 1, districtId: 1, name: 1 }
         }
       ];
 
@@ -61,27 +76,46 @@ export class DSDService {
    */
   async getDSDsByDistrict(districtIdentifier: string): Promise<DSD[]> {
     try {
+      // First find the district
+      const district = await DistrictModel.findOne({
+        $or: [
+          { code: districtIdentifier.toUpperCase() },
+          { name: { $regex: new RegExp(`^${districtIdentifier}$`, 'i') } }
+        ]
+      }).lean();
+
+      if (!district) {
+        return [];
+      }
+
       const collection = this.dbService.getCollection();
       
-      // Try to match by district code or name
-      const matchCondition = {
-        $or: [
-          { 'properties.DISTRICT_C': districtIdentifier },
-          { 'properties.DISTRICT_N': { $regex: new RegExp(`^${districtIdentifier}$`, 'i') } }
-        ]
-      };
-
       const pipeline = [
-        { $match: matchCondition },
+        {
+          $match: { 'properties.DISTRICT_C': district._id }
+        },
+        {
+          $lookup: {
+            from: 'districts',
+            localField: 'properties.DISTRICT_C',
+            foreignField: '_id',
+            as: 'district'
+          }
+        },
+        {
+          $lookup: {
+            from: 'provinces',
+            localField: 'properties.PROVINCE_C',
+            foreignField: '_id',
+            as: 'province'
+          }
+        },
         {
           $group: {
             _id: {
-              code: '$properties.DSD_C',
               name: '$properties.DSD_N',
-              districtCode: '$properties.DISTRICT_C',
-              districtName: '$properties.DISTRICT_N',
-              provinceCode: '$properties.PROVINCE_C',
-              provinceName: '$properties.PROVINCE_N'
+              district: { $arrayElemAt: ['$district', 0] },
+              province: { $arrayElemAt: ['$province', 0] }
             },
             divisionCount: { $sum: 1 }
           }
@@ -89,19 +123,19 @@ export class DSDService {
         {
           $project: {
             _id: 0,
-            id: '$_id.code',
+            id: '$_id.name',
             name: '$_id.name',
             nameEn: '$_id.name',
-            code: '$_id.code',
-            districtId: '$_id.districtCode',
-            districtName: '$_id.districtName',
-            provinceId: '$_id.provinceCode',
-            provinceName: '$_id.provinceName',
+            code: '$_id.name',
+            districtId: '$_id.district.code',
+            districtName: '$_id.district.name',
+            provinceId: '$_id.province.code',
+            provinceName: '$_id.province.name',
             divisionCount: 1
           }
         },
         {
-          $sort: { code: 1 }
+          $sort: { name: 1 }
         }
       ];
 
@@ -118,25 +152,46 @@ export class DSDService {
    */
   async getDSDsByProvince(provinceName: string): Promise<DSD[]> {
     try {
+      // First find the province
+      const province = await ProvinceModel.findOne({
+        $or: [
+          { code: provinceName.toUpperCase() },
+          { name: { $regex: new RegExp(`^${provinceName}$`, 'i') } }
+        ]
+      }).lean();
+
+      if (!province) {
+        return [];
+      }
+
       const collection = this.dbService.getCollection();
       
       const pipeline = [
         {
-          $match: { 
-            'properties.PROVINCE_N': { 
-              $regex: new RegExp(`^${provinceName}$`, 'i') 
-            }
+          $match: { 'properties.PROVINCE_C': province._id }
+        },
+        {
+          $lookup: {
+            from: 'districts',
+            localField: 'properties.DISTRICT_C',
+            foreignField: '_id',
+            as: 'district'
+          }
+        },
+        {
+          $lookup: {
+            from: 'provinces',
+            localField: 'properties.PROVINCE_C',
+            foreignField: '_id',
+            as: 'province'
           }
         },
         {
           $group: {
             _id: {
-              code: '$properties.DSD_C',
               name: '$properties.DSD_N',
-              districtCode: '$properties.DISTRICT_C',
-              districtName: '$properties.DISTRICT_N',
-              provinceCode: '$properties.PROVINCE_C',
-              provinceName: '$properties.PROVINCE_N'
+              district: { $arrayElemAt: ['$district', 0] },
+              province: { $arrayElemAt: ['$province', 0] }
             },
             divisionCount: { $sum: 1 }
           }
@@ -144,19 +199,19 @@ export class DSDService {
         {
           $project: {
             _id: 0,
-            id: '$_id.code',
+            id: '$_id.name',
             name: '$_id.name',
             nameEn: '$_id.name',
-            code: '$_id.code',
-            districtId: '$_id.districtCode',
-            districtName: '$_id.districtName',
-            provinceId: '$_id.provinceCode',
-            provinceName: '$_id.provinceName',
+            code: '$_id.name',
+            districtId: '$_id.district.code',
+            districtName: '$_id.district.name',
+            provinceId: '$_id.province.code',
+            provinceName: '$_id.province.name',
             divisionCount: 1
           }
         },
         {
-          $sort: { districtId: 1, code: 1 }
+          $sort: { districtId: 1, name: 1 }
         }
       ];
 
@@ -169,25 +224,42 @@ export class DSDService {
   }
 
   /**
-   * Get DSD by ID (code)
+   * Get DSD by ID (name, since there's no DSD code anymore)
    */
-  async getDSDById(dsdCode: string): Promise<DSD | null> {
+  async getDSDById(dsdName: string): Promise<DSD | null> {
     try {
       const collection = this.dbService.getCollection();
       
       const pipeline = [
         {
-          $match: { 'properties.DSD_C': dsdCode }
+          $match: { 
+            'properties.DSD_N': { 
+              $regex: new RegExp(`^${dsdName}$`, 'i') 
+            }
+          }
+        },
+        {
+          $lookup: {
+            from: 'districts',
+            localField: 'properties.DISTRICT_C',
+            foreignField: '_id',
+            as: 'district'
+          }
+        },
+        {
+          $lookup: {
+            from: 'provinces',
+            localField: 'properties.PROVINCE_C',
+            foreignField: '_id',
+            as: 'province'
+          }
         },
         {
           $group: {
             _id: {
-              code: '$properties.DSD_C',
               name: '$properties.DSD_N',
-              districtCode: '$properties.DISTRICT_C',
-              districtName: '$properties.DISTRICT_N',
-              provinceCode: '$properties.PROVINCE_C',
-              provinceName: '$properties.PROVINCE_N'
+              district: { $arrayElemAt: ['$district', 0] },
+              province: { $arrayElemAt: ['$province', 0] }
             },
             divisionCount: { $sum: 1 }
           }
@@ -195,14 +267,14 @@ export class DSDService {
         {
           $project: {
             _id: 0,
-            id: '$_id.code',
+            id: '$_id.name',
             name: '$_id.name',
             nameEn: '$_id.name',
-            code: '$_id.code',
-            districtId: '$_id.districtCode',
-            districtName: '$_id.districtName',
-            provinceId: '$_id.provinceCode',
-            provinceName: '$_id.provinceName',
+            code: '$_id.name',
+            districtId: '$_id.district.code',
+            districtName: '$_id.district.name',
+            provinceId: '$_id.province.code',
+            provinceName: '$_id.province.name',
             divisionCount: 1
           }
         }
@@ -217,9 +289,9 @@ export class DSDService {
   }
 
   /**
-   * Get GN divisions by DSD
+   * Get GN divisions by DSD (using DSD name)
    */
-  async getDivisionsByDSD(dsdCode: string, includeGeometry: boolean = false): Promise<Division[]> {
+  async getDivisionsByDSD(dsdName: string, includeGeometry: boolean = false): Promise<Division[]> {
     try {
       const collection = this.dbService.getCollection();
       
@@ -228,22 +300,12 @@ export class DSDService {
         id: { $toString: '$_id' },
         name: '$properties.GND_N',
         nameEn: '$properties.GND_N',
-        nameSi: '$properties.GND_NAME_G',
+        nameSi: '$properties.GND_NAME_Gaz',
         gnNumber: '$properties.GND_NO',
-        gnCode: '$properties.GND_C',
-        adminCode: '$properties.ADMIN_CODE',
-        dsdId: '$properties.DSD_C',
+        dsdId: '$properties.DSD_N',
         dsdName: '$properties.DSD_N',
-        districtId: '$properties.DISTRICT_C',
-        districtName: '$properties.DISTRICT_N',
-        provinceId: '$properties.PROVINCE_C',
-        provinceName: '$properties.PROVINCE_N',
-        gnOfficer: '$properties.GN_Officer',
-        gnOfficerPhone: '$properties.GN_Offic_1',
-        mcUcPcName: '$properties.MC_UC_PC_N',
         area: '$properties.Ext_SqKm',
-        population: '$properties.Pop_2020',
-        yearCreated: '$properties.YEAR_CREAT'
+        population: '$properties.Pop_2020'
       };
 
       if (includeGeometry) {
@@ -252,10 +314,42 @@ export class DSDService {
 
       const pipeline = [
         {
-          $match: { 'properties.DSD_C': dsdCode }
+          $match: { 
+            'properties.DSD_N': { 
+              $regex: new RegExp(`^${dsdName}$`, 'i') 
+            }
+          }
         },
         {
-          $project: projection
+          $lookup: {
+            from: 'districts',
+            localField: 'properties.DISTRICT_C',
+            foreignField: '_id',
+            as: 'district'
+          }
+        },
+        {
+          $lookup: {
+            from: 'provinces',
+            localField: 'properties.PROVINCE_C',
+            foreignField: '_id',
+            as: 'province'
+          }
+        },
+        {
+          $addFields: {
+            districtInfo: { $arrayElemAt: ['$district', 0] },
+            provinceInfo: { $arrayElemAt: ['$province', 0] }
+          }
+        },
+        {
+          $project: {
+            ...projection,
+            districtId: '$districtInfo.code',
+            districtName: '$districtInfo.name',
+            provinceId: '$provinceInfo.code',
+            provinceName: '$provinceInfo.name'
+          }
         },
         {
           $sort: { gnNumber: 1 }

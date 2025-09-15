@@ -54,7 +54,12 @@ export interface Province {
   id: string;
   name: string;
   nameEn: string;
+  nameSi: string;
+  nameTa: string;
   code: string;
+  capital: string;
+  area: number;
+  population: number;
   districtCount?: number;
   divisionCount?: number;
 }
@@ -63,7 +68,12 @@ export interface District {
   id: string;
   name: string;
   nameEn: string;
+  nameSi: string;
+  nameTa: string;
   code: string;
+  capital: string;
+  area: number;
+  population: number;
   provinceId: string;
   provinceName: string;
   dsdCount?: number;

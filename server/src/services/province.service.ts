@@ -1,52 +1,32 @@
 import { Province, District } from '../types/location.types';
-import { DatabaseService } from './database.service';
+import { Province as ProvinceModel } from '../models/Province.model';
 
 export class ProvinceService {
-  private dbService: DatabaseService;
-
-  constructor() {
-    this.dbService = DatabaseService.getInstance();
-  }
+  constructor() {}
 
   /**
    * Get all provinces from the database
    */
   async getAllProvinces(): Promise<Province[]> {
     try {
-      const collection = this.dbService.getCollection();
-      
-      // Aggregate to get unique provinces with counts
-      const pipeline = [
-        {
-          $group: {
-            _id: {
-              code: '$properties.PROVINCE_C',
-              name: '$properties.PROVINCE_N'
-            },
-            districtCount: {
-              $addToSet: '$properties.DISTRICT_C'
-            },
-            divisionCount: { $sum: 1 }
-          }
-        },
-        {
-          $project: {
-            _id: 0,
-            id: '$_id.code',
-            name: '$_id.name',
-            nameEn: '$_id.name',
-            code: '$_id.code',
-            districtCount: { $size: '$districtCount' },
-            divisionCount: 1
-          }
-        },
-        {
-          $sort: { code: 1 }
-        }
-      ];
+      const provinces = await ProvinceModel.find()
+        .populate('districts', 'name code')
+        .sort({ name: 1 })
+        .lean();
 
-      const provinces = await collection.aggregate<Province>(pipeline).toArray();
-      return provinces;
+      // Transform to match the expected Province interface
+      return provinces.map(province => ({
+        id: province.code,
+        name: province.name,
+        nameEn: province.name,
+        nameSi: province.sinhala,
+        nameTa: province.tamil,
+        code: province.code,
+        capital: province.capital,
+        area: province.area,
+        population: province.population,
+        districtCount: province.districts.length
+      }));
     } catch (error) {
       console.error('Error fetching provinces:', error);
       throw new Error('Failed to fetch provinces from database');
@@ -58,39 +38,27 @@ export class ProvinceService {
    */
   async getProvinceById(provinceCode: string): Promise<Province | null> {
     try {
-      const collection = this.dbService.getCollection();
-      
-      const pipeline = [
-        {
-          $match: { 'properties.PROVINCE_C': provinceCode }
-        },
-        {
-          $group: {
-            _id: {
-              code: '$properties.PROVINCE_C',
-              name: '$properties.PROVINCE_N'
-            },
-            districtCount: {
-              $addToSet: '$properties.DISTRICT_C'
-            },
-            divisionCount: { $sum: 1 }
-          }
-        },
-        {
-          $project: {
-            _id: 0,
-            id: '$_id.code',
-            name: '$_id.name',
-            nameEn: '$_id.name',
-            code: '$_id.code',
-            districtCount: { $size: '$districtCount' },
-            divisionCount: 1
-          }
-        }
-      ];
+      const province = await ProvinceModel.findOne({ code: provinceCode.toUpperCase() })
+        .populate('districts', 'name code')
+        .lean();
 
-      const result = await collection.aggregate<Province>(pipeline).toArray();
-      return result.length > 0 ? result[0] || null : null;
+      if (!province) {
+        return null;
+      }
+
+      // Transform to match the expected Province interface
+      return {
+        id: province.code,
+        name: province.name,
+        nameEn: province.name,
+        nameSi: province.sinhala,
+        nameTa: province.tamil,
+        code: province.code,
+        capital: province.capital,
+        area: province.area,
+        population: province.population,
+        districtCount: province.districts.length
+      };
     } catch (error) {
       console.error('Error fetching province by ID:', error);
       throw new Error('Failed to fetch province from database');
@@ -102,46 +70,29 @@ export class ProvinceService {
    */
   async getDistrictsByProvince(provinceCode: string): Promise<District[]> {
     try {
-      const collection = this.dbService.getCollection();
-      
-      const pipeline = [
-        {
-          $match: { 'properties.PROVINCE_C': provinceCode }
-        },
-        {
-          $group: {
-            _id: {
-              code: '$properties.DISTRICT_C',
-              name: '$properties.DISTRICT_N',
-              provinceCode: '$properties.PROVINCE_C',
-              provinceName: '$properties.PROVINCE_N'
-            },
-            dsdCount: {
-              $addToSet: '$properties.DSD_C'
-            },
-            divisionCount: { $sum: 1 }
-          }
-        },
-        {
-          $project: {
-            _id: 0,
-            id: '$_id.code',
-            name: '$_id.name',
-            nameEn: '$_id.name',
-            code: '$_id.code',
-            provinceId: '$_id.provinceCode',
-            provinceName: '$_id.provinceName',
-            dsdCount: { $size: '$dsdCount' },
-            divisionCount: 1
-          }
-        },
-        {
-          $sort: { code: 1 }
-        }
-      ];
+      // First get the province
+      const province = await ProvinceModel.findOne({ code: provinceCode.toUpperCase() })
+        .populate('districts')
+        .lean();
 
-      const districts = await collection.aggregate<District>(pipeline).toArray();
-      return districts;
+      if (!province) {
+        return [];
+      }
+
+      // Transform districts to match expected interface
+      return (province.districts as any[]).map(district => ({
+        id: district.code,
+        name: district.name,
+        nameEn: district.name,
+        nameSi: district.sinhala,
+        nameTa: district.tamil,
+        code: district.code,
+        capital: district.capital,
+        area: district.area,
+        population: district.population,
+        provinceId: province.code,
+        provinceName: province.name
+      }));
     } catch (error) {
       console.error('Error fetching districts by province:', error);
       throw new Error('Failed to fetch districts from database');
@@ -153,43 +104,29 @@ export class ProvinceService {
    */
   async getProvinceByName(provinceName: string): Promise<Province | null> {
     try {
-      const collection = this.dbService.getCollection();
-      
-      const pipeline = [
-        {
-          $match: { 
-            'properties.PROVINCE_N': { 
-              $regex: new RegExp(`^${provinceName}$`, 'i') 
-            }
-          }
-        },
-        {
-          $group: {
-            _id: {
-              code: '$properties.PROVINCE_C',
-              name: '$properties.PROVINCE_N'
-            },
-            districtCount: {
-              $addToSet: '$properties.DISTRICT_C'
-            },
-            divisionCount: { $sum: 1 }
-          }
-        },
-        {
-          $project: {
-            _id: 0,
-            id: '$_id.code',
-            name: '$_id.name',
-            nameEn: '$_id.name',
-            code: '$_id.code',
-            districtCount: { $size: '$districtCount' },
-            divisionCount: 1
-          }
-        }
-      ];
+      const province = await ProvinceModel.findOne({ 
+        name: { $regex: new RegExp(`^${provinceName}$`, 'i') }
+      })
+        .populate('districts', 'name code')
+        .lean();
 
-      const result = await collection.aggregate<Province>(pipeline).toArray();
-      return result.length > 0 ? result[0] || null : null;
+      if (!province) {
+        return null;
+      }
+
+      // Transform to match the expected Province interface
+      return {
+        id: province.code,
+        name: province.name,
+        nameEn: province.name,
+        nameSi: province.sinhala,
+        nameTa: province.tamil,
+        code: province.code,
+        capital: province.capital,
+        area: province.area,
+        population: province.population,
+        districtCount: province.districts.length
+      };
     } catch (error) {
       console.error('Error fetching province by name:', error);
       throw new Error('Failed to fetch province from database');

@@ -1,6 +1,8 @@
 import { Division, DivisionFilters } from '../types/location.types';
 import { DatabaseService } from './database.service';
 import { ObjectId } from 'mongodb';
+import { District as DistrictModel } from '../models/District.model';
+import { Province as ProvinceModel } from '../models/Province.model';
 
 export class DivisionService {
   private dbService: DatabaseService;
@@ -19,27 +21,43 @@ export class DivisionService {
       // Build match conditions
       const matchConditions: any = {};
       
+      // Handle province filter by looking up province ObjectId
       if (filters.province) {
-        matchConditions['properties.PROVINCE_N'] = { 
-          $regex: new RegExp(`^${filters.province}$`, 'i') 
-        };
+        const province = await ProvinceModel.findOne({
+          $or: [
+            { code: filters.province.toUpperCase() },
+            { name: { $regex: new RegExp(`^${filters.province}$`, 'i') } }
+          ]
+        }).lean();
+        
+        if (province) {
+          matchConditions['properties.PROVINCE_C'] = province._id;
+        } else {
+          // If province not found, return empty results
+          return { divisions: [], total: 0 };
+        }
       }
       
+      // Handle district filter by looking up district ObjectId
       if (filters.district) {
-        matchConditions['properties.DISTRICT_N'] = { 
-          $regex: new RegExp(`^${filters.district}$`, 'i') 
-        };
+        const district = await DistrictModel.findOne({
+          $or: [
+            { code: filters.district.toUpperCase() },
+            { name: { $regex: new RegExp(`^${filters.district}$`, 'i') } }
+          ]
+        }).lean();
+        
+        if (district) {
+          matchConditions['properties.DISTRICT_C'] = district._id;
+        } else {
+          // If district not found, return empty results
+          return { divisions: [], total: 0 };
+        }
       }
       
       if (filters.dsd) {
         matchConditions['properties.DSD_N'] = { 
           $regex: new RegExp(`^${filters.dsd}$`, 'i') 
-        };
-      }
-      
-      if (filters.gnOfficer) {
-        matchConditions['properties.GN_Officer'] = { 
-          $regex: new RegExp(filters.gnOfficer, 'i') 
         };
       }
       
@@ -62,10 +80,6 @@ export class DivisionService {
           matchConditions['properties.Ext_SqKm'].$lte = filters.maxArea;
         }
       }
-      
-      if (filters.yearCreated) {
-        matchConditions['properties.YEAR_CREAT'] = filters.yearCreated;
-      }
 
       // Build projection
       const projection: any = {
@@ -73,22 +87,12 @@ export class DivisionService {
         id: { $toString: '$_id' },
         name: '$properties.GND_N',
         nameEn: '$properties.GND_N',
-        nameSi: '$properties.GND_NAME_G',
+        nameSi: '$properties.GND_NAME_Gaz',
         gnNumber: '$properties.GND_NO',
-        gnCode: '$properties.GND_C',
-        adminCode: '$properties.ADMIN_CODE',
-        dsdId: '$properties.DSD_C',
+        dsdId: '$properties.DSD_N',
         dsdName: '$properties.DSD_N',
-        districtId: '$properties.DISTRICT_C',
-        districtName: '$properties.DISTRICT_N',
-        provinceId: '$properties.PROVINCE_C',
-        provinceName: '$properties.PROVINCE_N',
-        gnOfficer: '$properties.GN_Officer',
-        gnOfficerPhone: '$properties.GN_Offic_1',
-        mcUcPcName: '$properties.MC_UC_PC_N',
         area: '$properties.Ext_SqKm',
-        population: '$properties.Pop_2020',
-        yearCreated: '$properties.YEAR_CREAT'
+        population: '$properties.Pop_2020'
       };
 
       if (filters.includeGeometry) {
@@ -102,7 +106,43 @@ export class DivisionService {
         pipeline.push({ $match: matchConditions });
       }
       
-      pipeline.push({ $project: projection });
+      // Add lookups for district and province information
+      pipeline.push({
+        $lookup: {
+          from: 'districts',
+          localField: 'properties.DISTRICT_C',
+          foreignField: '_id',
+          as: 'district'
+        }
+      });
+      
+      pipeline.push({
+        $lookup: {
+          from: 'provinces',
+          localField: 'properties.PROVINCE_C',
+          foreignField: '_id',
+          as: 'province'
+        }
+      });
+      
+      // Add district and province info to projection
+      pipeline.push({
+        $addFields: {
+          districtInfo: { $arrayElemAt: ['$district', 0] },
+          provinceInfo: { $arrayElemAt: ['$province', 0] }
+        }
+      });
+      
+      pipeline.push({
+        $project: {
+          ...projection,
+          districtId: '$districtInfo.code',
+          districtName: '$districtInfo.name',
+          provinceId: '$provinceInfo.code',
+          provinceName: '$provinceInfo.name'
+        }
+      });
+      
       pipeline.push({ $sort: { gnNumber: 1 } });
 
       // Get total count
@@ -139,22 +179,12 @@ export class DivisionService {
         id: { $toString: '$_id' },
         name: '$properties.GND_N',
         nameEn: '$properties.GND_N',
-        nameSi: '$properties.GND_NAME_G',
+        nameSi: '$properties.GND_NAME_Gaz',
         gnNumber: '$properties.GND_NO',
-        gnCode: '$properties.GND_C',
-        adminCode: '$properties.ADMIN_CODE',
-        dsdId: '$properties.DSD_C',
+        dsdId: '$properties.DSD_N',
         dsdName: '$properties.DSD_N',
-        districtId: '$properties.DISTRICT_C',
-        districtName: '$properties.DISTRICT_N',
-        provinceId: '$properties.PROVINCE_C',
-        provinceName: '$properties.PROVINCE_N',
-        gnOfficer: '$properties.GN_Officer',
-        gnOfficerPhone: '$properties.GN_Offic_1',
-        mcUcPcName: '$properties.MC_UC_PC_N',
         area: '$properties.Ext_SqKm',
-        population: '$properties.Pop_2020',
-        yearCreated: '$properties.YEAR_CREAT'
+        population: '$properties.Pop_2020'
       };
 
       if (includeGeometry) {
@@ -166,7 +196,35 @@ export class DivisionService {
           $match: { _id: new ObjectId(divisionId) }
         },
         {
-          $project: projection
+          $lookup: {
+            from: 'districts',
+            localField: 'properties.DISTRICT_C',
+            foreignField: '_id',
+            as: 'district'
+          }
+        },
+        {
+          $lookup: {
+            from: 'provinces',
+            localField: 'properties.PROVINCE_C',
+            foreignField: '_id',
+            as: 'province'
+          }
+        },
+        {
+          $addFields: {
+            districtInfo: { $arrayElemAt: ['$district', 0] },
+            provinceInfo: { $arrayElemAt: ['$province', 0] }
+          }
+        },
+        {
+          $project: {
+            ...projection,
+            districtId: '$districtInfo.code',
+            districtName: '$districtInfo.name',
+            provinceId: '$provinceInfo.code',
+            provinceName: '$provinceInfo.name'
+          }
         }
       ];
 
@@ -188,12 +246,10 @@ export class DivisionService {
       const searchConditions = {
         $or: [
           { 'properties.GND_N': { $regex: new RegExp(query, 'i') } },
-          { 'properties.GND_NAME_C': { $regex: new RegExp(query, 'i') } },
-          { 'properties.GND_NAME_G': { $regex: new RegExp(query, 'i') } },
-          { 'properties.GND_NO': { $regex: new RegExp(query, 'i') } },
-          { 'properties.GND_C': { $regex: new RegExp(query, 'i') } },
-          { 'properties.ADMIN_CODE': isNaN(Number(query)) ? null : Number(query) }
-        ].filter(condition => condition !== null)
+          { 'properties.GND_NAME_Cen': { $regex: new RegExp(query, 'i') } },
+          { 'properties.GND_NAME_Gaz': { $regex: new RegExp(query, 'i') } },
+          { 'properties.GND_NO': { $regex: new RegExp(query, 'i') } }
+        ]
       };
 
       const projection: any = {
@@ -201,22 +257,12 @@ export class DivisionService {
         id: { $toString: '$_id' },
         name: '$properties.GND_N',
         nameEn: '$properties.GND_N',
-        nameSi: '$properties.GND_NAME_G',
+        nameSi: '$properties.GND_NAME_Gaz',
         gnNumber: '$properties.GND_NO',
-        gnCode: '$properties.GND_C',
-        adminCode: '$properties.ADMIN_CODE',
-        dsdId: '$properties.DSD_C',
+        dsdId: '$properties.DSD_N',
         dsdName: '$properties.DSD_N',
-        districtId: '$properties.DISTRICT_C',
-        districtName: '$properties.DISTRICT_N',
-        provinceId: '$properties.PROVINCE_C',
-        provinceName: '$properties.PROVINCE_N',
-        gnOfficer: '$properties.GN_Officer',
-        gnOfficerPhone: '$properties.GN_Offic_1',
-        mcUcPcName: '$properties.MC_UC_PC_N',
         area: '$properties.Ext_SqKm',
-        population: '$properties.Pop_2020',
-        yearCreated: '$properties.YEAR_CREAT'
+        population: '$properties.Pop_2020'
       };
 
       if (includeGeometry) {
@@ -225,7 +271,37 @@ export class DivisionService {
 
       const pipeline = [
         { $match: searchConditions },
-        { $project: projection },
+        {
+          $lookup: {
+            from: 'districts',
+            localField: 'properties.DISTRICT_C',
+            foreignField: '_id',
+            as: 'district'
+          }
+        },
+        {
+          $lookup: {
+            from: 'provinces',
+            localField: 'properties.PROVINCE_C',
+            foreignField: '_id',
+            as: 'province'
+          }
+        },
+        {
+          $addFields: {
+            districtInfo: { $arrayElemAt: ['$district', 0] },
+            provinceInfo: { $arrayElemAt: ['$province', 0] }
+          }
+        },
+        {
+          $project: {
+            ...projection,
+            districtId: '$districtInfo.code',
+            districtName: '$districtInfo.name',
+            provinceId: '$provinceInfo.code',
+            provinceName: '$provinceInfo.name'
+          }
+        },
         { $sort: { gnNumber: 1 } },
         { $limit: Math.min(limit, 100) }
       ];
@@ -241,7 +317,7 @@ export class DivisionService {
   /**
    * Get divisions by DSD (Divisional Secretariat Division)
    */
-  async getDivisionsByDSD(dsdCode: string, includeGeometry: boolean = false): Promise<Division[]> {
+  async getDivisionsByDSD(dsdName: string, includeGeometry: boolean = false): Promise<Division[]> {
     try {
       const collection = this.dbService.getCollection();
       
@@ -250,22 +326,12 @@ export class DivisionService {
         id: { $toString: '$_id' },
         name: '$properties.GND_N',
         nameEn: '$properties.GND_N',
-        nameSi: '$properties.GND_NAME_G',
+        nameSi: '$properties.GND_NAME_Gaz',
         gnNumber: '$properties.GND_NO',
-        gnCode: '$properties.GND_C',
-        adminCode: '$properties.ADMIN_CODE',
-        dsdId: '$properties.DSD_C',
+        dsdId: '$properties.DSD_N',
         dsdName: '$properties.DSD_N',
-        districtId: '$properties.DISTRICT_C',
-        districtName: '$properties.DISTRICT_N',
-        provinceId: '$properties.PROVINCE_C',
-        provinceName: '$properties.PROVINCE_N',
-        gnOfficer: '$properties.GN_Officer',
-        gnOfficerPhone: '$properties.GN_Offic_1',
-        mcUcPcName: '$properties.MC_UC_PC_N',
         area: '$properties.Ext_SqKm',
-        population: '$properties.Pop_2020',
-        yearCreated: '$properties.YEAR_CREAT'
+        population: '$properties.Pop_2020'
       };
 
       if (includeGeometry) {
@@ -274,10 +340,42 @@ export class DivisionService {
 
       const pipeline = [
         {
-          $match: { 'properties.DSD_C': dsdCode }
+          $match: { 
+            'properties.DSD_N': { 
+              $regex: new RegExp(`^${dsdName}$`, 'i') 
+            }
+          }
         },
         {
-          $project: projection
+          $lookup: {
+            from: 'districts',
+            localField: 'properties.DISTRICT_C',
+            foreignField: '_id',
+            as: 'district'
+          }
+        },
+        {
+          $lookup: {
+            from: 'provinces',
+            localField: 'properties.PROVINCE_C',
+            foreignField: '_id',
+            as: 'province'
+          }
+        },
+        {
+          $addFields: {
+            districtInfo: { $arrayElemAt: ['$district', 0] },
+            provinceInfo: { $arrayElemAt: ['$province', 0] }
+          }
+        },
+        {
+          $project: {
+            ...projection,
+            districtId: '$districtInfo.code',
+            districtName: '$districtInfo.name',
+            provinceId: '$provinceInfo.code',
+            provinceName: '$provinceInfo.name'
+          }
         },
         {
           $sort: { gnNumber: 1 }

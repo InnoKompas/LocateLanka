@@ -1,5 +1,6 @@
 import { District, Division, DSD } from '../types/location.types';
 import { DatabaseService } from './database.service';
+import { District as DistrictModel } from '../models/District.model';
 
 export class DistrictService {
   private dbService: DatabaseService;
@@ -13,43 +14,25 @@ export class DistrictService {
    */
   async getAllDistricts(): Promise<District[]> {
     try {
-      const collection = this.dbService.getCollection();
-      
-      const pipeline = [
-        {
-          $group: {
-            _id: {
-              code: '$properties.DISTRICT_C',
-              name: '$properties.DISTRICT_N',
-              provinceCode: '$properties.PROVINCE_C',
-              provinceName: '$properties.PROVINCE_N'
-            },
-            dsdCount: {
-              $addToSet: '$properties.DSD_C'
-            },
-            divisionCount: { $sum: 1 }
-          }
-        },
-        {
-          $project: {
-            _id: 0,
-            id: '$_id.code',
-            name: '$_id.name',
-            nameEn: '$_id.name',
-            code: '$_id.code',
-            provinceId: '$_id.provinceCode',
-            provinceName: '$_id.provinceName',
-            dsdCount: { $size: '$dsdCount' },
-            divisionCount: 1
-          }
-        },
-        {
-          $sort: { provinceId: 1, code: 1 }
-        }
-      ];
+      const districts = await DistrictModel.find()
+        .populate('provinceRef', 'name code')
+        .sort({ province_id: 1, name: 1 })
+        .lean();
 
-      const districts = await collection.aggregate<District>(pipeline).toArray();
-      return districts;
+      // Transform to match the expected District interface
+      return districts.map(district => ({
+        id: district.code,
+        name: district.name,
+        nameEn: district.name,
+        nameSi: district.sinhala,
+        nameTa: district.tamil,
+        code: district.code,
+        capital: district.capital,
+        area: district.area,
+        population: district.population,
+        provinceId: (district.provinceRef as any)?.code || district.province_id.toString(),
+        provinceName: (district.provinceRef as any)?.name || district.province
+      }));
     } catch (error) {
       console.error('Error fetching districts:', error);
       throw new Error('Failed to fetch districts from database');
@@ -61,50 +44,30 @@ export class DistrictService {
    */
   async getDistrictsByProvince(provinceName: string): Promise<District[]> {
     try {
-      const collection = this.dbService.getCollection();
-      
-      const pipeline = [
-        {
-          $match: { 
-            'properties.PROVINCE_N': { 
-              $regex: new RegExp(`^${provinceName}$`, 'i') 
-            }
-          }
-        },
-        {
-          $group: {
-            _id: {
-              code: '$properties.DISTRICT_C',
-              name: '$properties.DISTRICT_N',
-              provinceCode: '$properties.PROVINCE_C',
-              provinceName: '$properties.PROVINCE_N'
-            },
-            dsdCount: {
-              $addToSet: '$properties.DSD_C'
-            },
-            divisionCount: { $sum: 1 }
-          }
-        },
-        {
-          $project: {
-            _id: 0,
-            id: '$_id.code',
-            name: '$_id.name',
-            nameEn: '$_id.name',
-            code: '$_id.code',
-            provinceId: '$_id.provinceCode',
-            provinceName: '$_id.provinceName',
-            dsdCount: { $size: '$dsdCount' },
-            divisionCount: 1
-          }
-        },
-        {
-          $sort: { code: 1 }
-        }
-      ];
+      const districts = await DistrictModel.find({
+        $or: [
+          { province: { $regex: new RegExp(`^${provinceName}$`, 'i') } },
+          { 'provinceRef.name': { $regex: new RegExp(`^${provinceName}$`, 'i') } }
+        ]
+      })
+        .populate('provinceRef', 'name code')
+        .sort({ name: 1 })
+        .lean();
 
-      const districts = await collection.aggregate<District>(pipeline).toArray();
-      return districts;
+      // Transform to match the expected District interface
+      return districts.map(district => ({
+        id: district.code,
+        name: district.name,
+        nameEn: district.name,
+        nameSi: district.sinhala,
+        nameTa: district.tamil,
+        code: district.code,
+        capital: district.capital,
+        area: district.area,
+        population: district.population,
+        provinceId: (district.provinceRef as any)?.code || district.province_id.toString(),
+        provinceName: (district.provinceRef as any)?.name || district.province
+      }));
     } catch (error) {
       console.error('Error fetching districts by province:', error);
       throw new Error('Failed to fetch districts from database');
@@ -116,43 +79,28 @@ export class DistrictService {
    */
   async getDistrictById(districtCode: string): Promise<District | null> {
     try {
-      const collection = this.dbService.getCollection();
-      
-      const pipeline = [
-        {
-          $match: { 'properties.DISTRICT_C': districtCode }
-        },
-        {
-          $group: {
-            _id: {
-              code: '$properties.DISTRICT_C',
-              name: '$properties.DISTRICT_N',
-              provinceCode: '$properties.PROVINCE_C',
-              provinceName: '$properties.PROVINCE_N'
-            },
-            dsdCount: {
-              $addToSet: '$properties.DSD_C'
-            },
-            divisionCount: { $sum: 1 }
-          }
-        },
-        {
-          $project: {
-            _id: 0,
-            id: '$_id.code',
-            name: '$_id.name',
-            nameEn: '$_id.name',
-            code: '$_id.code',
-            provinceId: '$_id.provinceCode',
-            provinceName: '$_id.provinceName',
-            dsdCount: { $size: '$dsdCount' },
-            divisionCount: 1
-          }
-        }
-      ];
+      const district = await DistrictModel.findOne({ code: districtCode.toUpperCase() })
+        .populate('provinceRef', 'name code')
+        .lean();
 
-      const result = await collection.aggregate<District>(pipeline).toArray();
-      return result.length > 0 ? result[0] || null : null;
+      if (!district) {
+        return null;
+      }
+
+      // Transform to match the expected District interface
+      return {
+        id: district.code,
+        name: district.name,
+        nameEn: district.name,
+        nameSi: district.sinhala,
+        nameTa: district.tamil,
+        code: district.code,
+        capital: district.capital,
+        area: district.area,
+        population: district.population,
+        provinceId: (district.provinceRef as any)?.code || district.province_id.toString(),
+        provinceName: (district.provinceRef as any)?.name || district.province
+      };
     } catch (error) {
       console.error('Error fetching district by ID:', error);
       throw new Error('Failed to fetch district from database');
@@ -215,6 +163,12 @@ export class DistrictService {
    */
   async getDivisionsByDistrict(districtCode: string, includeGeometry: boolean = false): Promise<Division[]> {
     try {
+      // First get the district ObjectId
+      const district = await DistrictModel.findOne({ code: districtCode.toUpperCase() }).lean();
+      if (!district) {
+        throw new Error(`District with code ${districtCode} not found`);
+      }
+
       const collection = this.dbService.getCollection();
       
       const projection: any = {
@@ -246,7 +200,7 @@ export class DistrictService {
 
       const pipeline = [
         {
-          $match: { 'properties.DISTRICT_C': districtCode }
+          $match: { 'properties.DISTRICT_C': district._id }
         },
         {
           $project: projection
