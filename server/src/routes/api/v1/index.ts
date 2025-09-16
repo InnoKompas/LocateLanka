@@ -3,6 +3,8 @@ import provincesRoutes from './provinces.routes';
 import districtsRoutes from './districts.routes';
 import dsdsRoutes from './dsds.routes';
 import divisionsRoutes from './divisions.routes';
+import demoRoutes from './demo.routes';
+import demoTokenRoutes from './demoToken.routes';
 
 const router: Router = Router();
 
@@ -11,6 +13,12 @@ router.use('/provinces', provincesRoutes);
 router.use('/districts', districtsRoutes);
 router.use('/dsds', dsdsRoutes);
 router.use('/divisions', divisionsRoutes);
+
+// Public demo routes (domain restricted)
+router.use('/demo', demoRoutes);
+
+// Demo token management routes
+router.use('/demo-token', demoTokenRoutes);
 
 // API health check
 router.get('/health', (_req, res) => {
@@ -32,7 +40,9 @@ router.get('/', (_req, res) => {
       provinces: '/api/v1/provinces',
       districts: '/api/v1/districts',
       dsds: '/api/v1/dsds',
-      divisions: '/api/v1/divisions'
+      divisions: '/api/v1/divisions',
+      demo: '/api/v1/demo',
+      demoToken: '/api/v1/demo-token'
     },
     documentation: 'https://lankalocate.dev/docs'
   });

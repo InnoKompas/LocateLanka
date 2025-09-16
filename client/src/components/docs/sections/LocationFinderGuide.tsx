@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { MapPin, ChevronDown, ChevronUp, Loader2, Search, Globe, Users, BarChart3, Zap, Target, Key, AlertTriangle, Code } from 'lucide-react';
+import { MapPin, ChevronDown, ChevronUp, Loader2, Search, Globe, Users, BarChart3, Zap, Target, AlertTriangle, Code } from 'lucide-react';
 import { DocsSection } from '../shared/DocsSection';
 import { CodeBlock } from '../shared/CodeBlock';
-import locationService, { type Province, type District, type DSD, type Division } from '../../../services/location.service';
+import demoService from '../../../services/demo.service';
+import { type Province, type District, type DSD, type Division } from '../../../services/location.service';
 
 export const LocationFinderGuide = () => {
   // State for real data
@@ -20,9 +21,7 @@ export const LocationFinderGuide = () => {
   // UI state
   const [loading, setLoading] = useState<{ [key: string]: boolean }>({});
   const [error, setError] = useState<string>('');
-  const [apiKey, setApiKey] = useState<string>('');
-  const [isApiKeySet, setIsApiKeySet] = useState<boolean>(false);
-  const [showApiKeyInput, setShowApiKeyInput] = useState<boolean>(false);
+  const [isConnected, setIsConnected] = useState<boolean>(false);
 
   // Code section visibility state
   const [codeVisibility, setCodeVisibility] = useState({
@@ -31,60 +30,24 @@ export const LocationFinderGuide = () => {
     react: false
   });
 
-  // Check for existing API key on mount
+  // Test demo API connection on mount
   useEffect(() => {
-    const status = locationService.getConnectionStatus();
-    setIsApiKeySet(status.hasApiKey);
-    if (!status.hasApiKey) {
-      setShowApiKeyInput(true);
-    }
+    testConnection();
   }, []);
 
-  const handleApiKeySubmit = async () => {
-    if (!apiKey.trim()) {
-      setError('Please enter a valid API key');
-      return;
-    }
-
-    setLoading(prev => ({ ...prev, apiKey: true }));
-    setError('');
-
+  const testConnection = async () => {
     try {
-      locationService.setApiKey(apiKey.trim());
-      const isValid = await locationService.validateApiKey();
-      
-      if (isValid) {
-        setIsApiKeySet(true);
-        setShowApiKeyInput(false);
-        setApiKey('');
-        // Load provinces after successful API key validation
-        await loadProvinces();
-      } else {
-        locationService.clearApiKey();
-        setError('Invalid API key. Please check your credentials.');
-      }
+      const connected = await demoService.testConnection();
+      setIsConnected(connected);
+      // Always attempt to load provinces; UI disables select until loaded
+      await loadProvinces();
     } catch (err) {
-      locationService.clearApiKey();
-      setError(`API key validation failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
-    } finally {
-      setLoading(prev => ({ ...prev, apiKey: false }));
+      setError('Failed to connect to demo API. Please refresh the page.');
+      setIsConnected(false);
     }
   };
 
-  const handleClearApiKey = () => {
-    locationService.clearApiKey();
-    setIsApiKeySet(false);
-    setShowApiKeyInput(true);
-    setProvinces([]);
-    setDistricts([]);
-    setDsds([]);
-    setDivisions([]);
-    setSelectedProvince('');
-    setSelectedDistrict('');
-    setSelectedDSD('');
-    setSelectedDivision('');
-    setError('');
-  };
+  // Removed unused handleReconnect function
 
   const toggleCodeVisibility = (section: keyof typeof codeVisibility) => {
     setCodeVisibility(prev => ({
@@ -93,23 +56,17 @@ export const LocationFinderGuide = () => {
     }));
   };
 
-  // Load provinces on component mount if API key exists
-  useEffect(() => {
-    if (isApiKeySet) {
-      loadProvinces();
-    }
-  }, [isApiKeySet]);
 
   const loadProvinces = async () => {
-    if (!isApiKeySet) return;
-    
     setLoading(prev => ({ ...prev, provinces: true }));
     setError('');
     try {
-      const data = await locationService.getProvinces();
+      const data = await demoService.getProvinces();
       setProvinces(data);
+      setIsConnected(true);
     } catch (err) {
       setError(`Failed to load provinces: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setIsConnected(false);
     } finally {
       setLoading(prev => ({ ...prev, provinces: false }));
     }
@@ -124,13 +81,16 @@ export const LocationFinderGuide = () => {
     setDsds([]);
     setDivisions([]);
 
-    if (provinceId && isApiKeySet) {
+    if (provinceId && provinceId !== '') {
       setLoading(prev => ({ ...prev, districts: true }));
       try {
-        const data = await locationService.getDistrictsByProvince(parseInt(provinceId));
+        // Province IDs are strings (e.g., "WP", "CP", "EP"), not numbers
+        const data = await demoService.getDistrictsByProvince(provinceId);
         setDistricts(data);
+        setIsConnected(true); // Update connection status on successful request
       } catch (err) {
         setError(`Failed to load districts: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        setIsConnected(false);
       } finally {
         setLoading(prev => ({ ...prev, districts: false }));
       }
@@ -144,17 +104,19 @@ export const LocationFinderGuide = () => {
     setDsds([]);
     setDivisions([]);
 
-    if (districtId && isApiKeySet) {
+    if (districtId) {
       setLoading(prev => ({ ...prev, dsds: true }));
       try {
         // Find the selected district to get its name for the API call
         const selectedDistrictData = districts.find(d => d.id.toString() === districtId);
         if (selectedDistrictData) {
-          const data = await locationService.getDSDs({ district: selectedDistrictData.name });
+          const data = await demoService.getDSDsByDistrict(selectedDistrictData.name);
           setDsds(data);
+          setIsConnected(true);
         }
       } catch (err) {
         setError(`Failed to load DSDs: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        setIsConnected(false);
       } finally {
         setLoading(prev => ({ ...prev, dsds: false }));
       }
@@ -166,23 +128,25 @@ export const LocationFinderGuide = () => {
     setSelectedDivision('');
     setDivisions([]);
 
-    if (dsdId && isApiKeySet) {
+    if (dsdId) {
       setLoading(prev => ({ ...prev, divisions: true }));
       try {
-        const data = await locationService.getDivisionsByDSD(dsdId);
+        const data = await demoService.getDivisionsByDSD(dsdId);
         setDivisions(data);
+        setIsConnected(true);
       } catch (err) {
         setError(`Failed to load divisions: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        setIsConnected(false);
       } finally {
         setLoading(prev => ({ ...prev, divisions: false }));
       }
     }
   };
 
-  const selectedProvinceData = provinces.find(p => p.id.toString() === selectedProvince);
-  const selectedDistrictData = districts.find(d => d.id.toString() === selectedDistrict);
-  const selectedDSDData = dsds.find(d => d.id === selectedDSD);
-  const selectedDivisionData = divisions.find(d => d.id === selectedDivision);
+  const selectedProvinceData = provinces.find(p => p?.id?.toString() === selectedProvince);
+  const selectedDistrictData = districts.find(d => d?.id?.toString() === selectedDistrict);
+  const selectedDSDData = dsds.find(d => d?.id === selectedDSD);
+  const selectedDivisionData = divisions.find(d => d?.id === selectedDivision);
 
   // Collapsible Code Section Component
   const CollapsibleCodeSection = ({ 
@@ -627,7 +591,7 @@ const LocationFinder: React.FC = () => {
     // Enhanced API request function with caching and error handling
     const makeRequest = async (endpoint: string): Promise<any[]> => {
         try {
-            const response = await fetch(\`\${BASE_URL}\${endpoint}\`, {
+            const response = await fetch(\`\${BASE_URL}\${endpoint}\`, {n doesnt show the 
                 headers: {
                     'Authorization': \`Bearer \${API_KEY}\`,
                     'Content-Type': 'application/json'
@@ -686,8 +650,12 @@ const LocationFinder: React.FC = () => {
         if (districtId) {
             setLoading(prev => ({ ...prev, dsds: true }));
              try {
-                 const dsds = await makeRequest(\`/dsds?district=\${districtId}\`);
-                 setData(prev => ({ ...prev, dsds }));
+                 // Find the selected district to get its name for the API call
+                 const selectedDistrictData = data.districts.find(d => d.id.toString() === districtId);
+                 if (selectedDistrictData) {
+                     const dsds = await makeRequest(\`/dsds?district=\${encodeURIComponent(selectedDistrictData.name)}\`);
+                     setData(prev => ({ ...prev, dsds }));
+                 }
              } finally {
                 setLoading(prev => ({ ...prev, dsds: false }));
             }
@@ -921,77 +889,45 @@ export default LocationFinder;`;
       <div className="space-y-8">
         {/* Interactive Demo */}
          <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-8">
+           
            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center space-x-3">
              <div className="p-2 bg-blue-600 rounded-lg">
                <Zap className="w-6 h-6 text-white" />
              </div>
-             <span>🇱🇰 Live Production Demo</span>
+             <span>🇱🇰 Live Interactive Demo</span>
           </h3>
           
-           {/* API Key Management */}
-           {showApiKeyInput && (
-             <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-               <div className="flex items-center space-x-2 mb-3">
-                 <Key className="w-5 h-5 text-blue-600" />
-                 <h4 className="font-semibold text-gray-900 dark:text-white">API Key Required</h4>
-               </div>
-               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                 Enter your LankaLocate API key to access live data from your backend.
-               </p>
-               <div className="flex space-x-3">
-                 <input
-                   type="password"
-                   value={apiKey}
-                   onChange={(e) => setApiKey(e.target.value)}
-                   placeholder="Enter your API key..."
-                   className="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                   onKeyPress={(e) => e.key === 'Enter' && handleApiKeySubmit()}
-                 />
-                 <button
-                   onClick={handleApiKeySubmit}
-                   disabled={loading.apiKey || !apiKey.trim()}
-                   className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-                 >
-                   {loading.apiKey ? (
-                     <Loader2 className="w-4 h-4 animate-spin" />
-                   ) : (
-                     <Key className="w-4 h-4" />
-                   )}
-                   <span>{loading.apiKey ? 'Validating...' : 'Connect'}</span>
-                 </button>
-               </div>
-             </div>
-           )}
 
-           {/* API Status */}
-           <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+           {/* Connection Status */}
+           {/* <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
              <div className="flex items-center justify-between">
                <div className="flex items-center space-x-2">
-                 <div className={`w-3 h-3 rounded-full ${isApiKeySet ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                 <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                   API Status: {isApiKeySet ? 'Connected' : 'Disconnected'}
+                   Demo API Status: {isConnected ? 'Connected' : 'Disconnected'}
                  </span>
                </div>
-               {isApiKeySet && (
+               {!isConnected && (
                  <button
-                   onClick={handleClearApiKey}
-                   className="text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                   onClick={handleReconnect}
+                   className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 flex items-center space-x-1"
                  >
-                   Disconnect
+                   <span>Retry</span>
                  </button>
                )}
              </div>
-             {!isApiKeySet && (
+             {!isConnected && (
                <p className="text-xs text-red-600 dark:text-red-400 mt-2">
-                 Please enter your API key to use the live demo
+                 Unable to connect to demo API. This demo only works from the official LankaLocate website.
                </p>
              )}
-             {isApiKeySet && (
+             {isConnected && (
                <p className="text-xs text-green-600 dark:text-green-400 mt-2">
-                 Connected to your LankaLocate API
+                 Connected to LankaLocate Demo API - No API key required!
                </p>
              )}
-           </div>
+           </div> */}
+           
           
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Selection Form */}
@@ -1007,7 +943,7 @@ export default LocationFinder;`;
                   value={selectedProvince}
                      onChange={(e) => handleProvinceChange(e.target.value)}
                      className="w-full p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all appearance-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50"
-                     disabled={!isApiKeySet || loading.provinces}
+                     disabled={!isConnected || loading.provinces}
                 >
                   <option value="">Select a province...</option>
                     {provinces.map(province => (
@@ -1034,7 +970,7 @@ export default LocationFinder;`;
                 <select 
                   value={selectedDistrict}
                      onChange={(e) => handleDistrictChange(e.target.value)}
-                     disabled={!isApiKeySet || !selectedProvince || loading.districts}
+                     disabled={!isConnected || !selectedProvince || loading.districts}
                      className="w-full p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all appearance-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50"
                 >
                   <option value="">Select a district...</option>
@@ -1062,7 +998,7 @@ export default LocationFinder;`;
                 <select 
                   value={selectedDSD}
                      onChange={(e) => handleDSDChange(e.target.value)}
-                     disabled={!isApiKeySet || !selectedDistrict || loading.dsds}
+                     disabled={!isConnected || !selectedDistrict || loading.dsds}
                      className="w-full p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all appearance-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50"
                 >
                   <option value="">Select a DSD...</option>
@@ -1090,7 +1026,7 @@ export default LocationFinder;`;
                    <select 
                      value={selectedDivision}
                      onChange={(e) => setSelectedDivision(e.target.value)}
-                     disabled={!isApiKeySet || !selectedDSD || loading.divisions}
+                     disabled={!isConnected || !selectedDSD || loading.divisions}
                      className="w-full p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all appearance-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50"
                    >
                     <option value="">Select a GN division...</option>
@@ -1155,9 +1091,9 @@ export default LocationFinder;`;
                  <AlertTriangle className="w-5 h-5 mt-0.5" />
         <div>
                    <strong>Error:</strong> {error}
-                   {!isApiKeySet && (
+                   {!isConnected && (
                      <div className="mt-2 text-sm">
-                       Make sure to enter a valid API key above to access the live demo.
+                       This demo requires connection to the LankaLocate API.
         </div>
             )}
           </div>
@@ -1241,6 +1177,26 @@ export default LocationFinder;`;
             </div>
           )}
         </div>
+
+         {/* Implementation Guide */}
+         <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border border-green-200 dark:border-green-800 rounded-xl p-6 mb-8">
+           <h3 className="text-xl font-semibold text-green-900 dark:text-green-100 mb-4 flex items-center space-x-2">
+             <Code className="w-5 h-5" />
+             <span>Production Implementation</span>
+           </h3>
+           <div className="space-y-3 text-green-800 dark:text-green-200">
+             <p className="font-medium">For your applications, use these authenticated endpoints:</p>
+             <ul className="space-y-2 text-sm ml-4">
+               <li><code className="bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">GET /api/v1/provinces</code> - Get all provinces</li>
+               <li><code className="bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">GET /api/v1/provinces/:id/districts</code> - Get districts by province</li>
+               <li><code className="bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">GET /api/v1/dsds?district=name</code> - Get DSDs by district</li>
+               <li><code className="bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">GET /api/v1/dsds/:id/divisions</code> - Get divisions by DSD</li>
+             </ul>
+             <p className="text-sm font-medium text-green-700 dark:text-green-300 mt-3">
+               ⚠️ All requests require <code className="bg-green-100 dark:bg-green-900/30 px-1 rounded">Authorization: Bearer YOUR_API_KEY</code> header
+             </p>
+           </div>
+         </div>
 
          {/* HTML Structure */}
          <CollapsibleCodeSection

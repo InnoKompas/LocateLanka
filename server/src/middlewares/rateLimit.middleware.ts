@@ -106,3 +106,82 @@ export const cleanupRateLimitStore = (): void => {
 
 // Cleanup every 10 minutes
 setInterval(cleanupRateLimitStore, 10 * 60 * 1000);
+
+/**
+ * Stricter rate limiter for demo endpoints
+ * Default: 60 requests per minute per IP
+ */
+interface DemoRateLimitStore {
+  [key: string]: {
+    count: number;
+    resetTime: number;
+  };
+}
+
+const demoRateLimitStore: DemoRateLimitStore = {};
+
+export const demoRateLimitMiddleware = (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): void => {
+  try {
+    const identifier = req.ip || 'anonymous';
+    const now = Date.now();
+    const windowMs = 60 * 1000; // 1 minute
+    const maxRequests = 60; // requests per window
+
+    if (!demoRateLimitStore[identifier]) {
+      demoRateLimitStore[identifier] = {
+        count: 1,
+        resetTime: now + windowMs
+      };
+      res.set({
+        'X-RateLimit-Limit': maxRequests.toString(),
+        'X-RateLimit-Remaining': (maxRequests - 1).toString(),
+        'X-RateLimit-Reset': new Date(demoRateLimitStore[identifier].resetTime).toISOString()
+      });
+      return next();
+    }
+
+    const userLimit = demoRateLimitStore[identifier];
+
+    if (now > userLimit.resetTime) {
+      userLimit.count = 1;
+      userLimit.resetTime = now + windowMs;
+      res.set({
+        'X-RateLimit-Limit': maxRequests.toString(),
+        'X-RateLimit-Remaining': (maxRequests - 1).toString(),
+        'X-RateLimit-Reset': new Date(userLimit.resetTime).toISOString()
+      });
+      return next();
+    }
+
+    if (userLimit.count >= maxRequests) {
+      res.set({
+        'X-RateLimit-Limit': maxRequests.toString(),
+        'X-RateLimit-Remaining': '0',
+        'X-RateLimit-Reset': new Date(userLimit.resetTime).toISOString(),
+        'Retry-After': Math.ceil((userLimit.resetTime - now) / 1000).toString()
+      });
+      res.status(429).json({
+        success: false,
+        error: 'Rate limit exceeded',
+        message: `Too many requests. Limit: ${maxRequests} requests per minute`,
+        retryAfter: Math.ceil((userLimit.resetTime - now) / 1000)
+      });
+      return;
+    }
+
+    userLimit.count++;
+    res.set({
+      'X-RateLimit-Limit': maxRequests.toString(),
+      'X-RateLimit-Remaining': (maxRequests - userLimit.count).toString(),
+      'X-RateLimit-Reset': new Date(userLimit.resetTime).toISOString()
+    });
+    next();
+  } catch (error) {
+    console.error('Demo rate limit middleware error:', error);
+    next();
+  }
+};
