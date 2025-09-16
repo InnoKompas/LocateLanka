@@ -152,7 +152,7 @@ export const DataVisualizationGuide = () => {
                 <div className="bg-surface-variant rounded-lg p-4">
                   <h4 className="font-medium text-text-primary mb-4">Population by Province</h4>
                   <div className="space-y-2">
-                    {chartData.slice(0, 5).map((item, index) => {
+                    {chartData.slice(0, 5).map((item) => {
                       const maxPopulation = Math.max(...chartData.map(d => d.population));
                       const widthPercentage = (item.population / maxPopulation) * 100;
                       
