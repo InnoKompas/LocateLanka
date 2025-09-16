@@ -173,6 +173,15 @@ class DemoService {
   }
 
   /**
+   * Search GN divisions by name
+   * GET /api/v1/demo/divisions/search?q={query}&limit={limit}
+   */
+  async searchDivisions(query: string, limit: number = 10): Promise<Division[]> {
+    const endpoint = `/divisions/search?q=${encodeURIComponent(query)}&limit=${limit}`;
+    return this.makeRequest<Division[]>(endpoint);
+  }
+
+  /**
    * Test connectivity to the demo API
    */
   async testConnection(): Promise<boolean> {
