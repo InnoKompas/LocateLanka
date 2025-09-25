@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useMutation, useQueryClient } from 'react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   User, 
   Mail, 
@@ -37,7 +37,7 @@ function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProps) {
   const [showPasswords, setShowPasswords] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const changePasswordMutation = useMutation(changePassword, {
+  const changePasswordMutation = useMutation({ mutationFn: changePassword,
     onSuccess: () => {
       toast.success('Password changed successfully');
       onClose();
@@ -131,7 +131,7 @@ function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProps) {
           </Button>
           <Button 
             type="submit" 
-            isLoading={changePasswordMutation.isLoading}
+            isLoading={changePasswordMutation.isPending}
           >
             Change Password
           </Button>
@@ -275,27 +275,26 @@ export function ProfileSettingsPage() {
   const [showEnable2FAModal, setShowEnable2FAModal] = useState(false);
   const [is2FAEnabled, setIs2FAEnabled] = useState(false); // This should come from user data
 
-  const updateProfileMutation = useMutation(updateProfile, {
+  const updateProfileMutation = useMutation({ mutationFn: updateProfile,
     onSuccess: () => {
       toast.success('Profile updated successfully');
-      queryClient.invalidateQueries('user');
+      queryClient.invalidateQueries({ queryKey: ['user'] });
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Failed to update profile');
     }
   });
 
-  const disable2FAMutation = useMutation(
-    (token: string) => disable2FA(token),
-    {
-      onSuccess: () => {
-        toast.success('2FA disabled successfully');
-        setIs2FAEnabled(false);
-      },
-      onError: () => {
-        toast.error('Failed to disable 2FA');
-      }
+  const disable2FAMutation = useMutation({
+    mutationFn: (token: string) => disable2FA(token),
+    onSuccess: () => {
+      toast.success('2FA disabled successfully');
+      setIs2FAEnabled(false);
+    },
+    onError: () => {
+      toast.error('Failed to disable 2FA');
     }
+  }
   );
 
   const handleUpdateProfile = (e: React.FormEvent) => {
@@ -362,7 +361,7 @@ export function ProfileSettingsPage() {
 
               <Button
                 type="submit"
-                isLoading={updateProfileMutation.isLoading}
+                isLoading={updateProfileMutation.isPending}
                 disabled={name === (user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : '') && email === user?.email}
               >
                 Update Profile
@@ -430,7 +429,7 @@ export function ProfileSettingsPage() {
                     variant="outline"
                     size="sm"
                     onClick={handleDisable2FA}
-                    isLoading={disable2FAMutation.isLoading}
+                    isLoading={disable2FAMutation.isPending}
                   >
                     Disable
                   </Button>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Plus, 
   Trash2, 
@@ -288,13 +288,13 @@ export function ApiKeysPage() {
   const [newlyCreatedKey, setNewlyCreatedKey] = useState<ApiKey | null>(null);
   const queryClient = useQueryClient();
 
-  const { data: apiKeys, isLoading } = useQuery('apiKeys', getApiKeys);
-  const { data: apiKeyLimits, isLoading: limitsLoading } = useQuery('apiKeyLimits', getApiKeyLimits);
+  const { data: apiKeys, isLoading } = useQuery({ queryKey: ['apiKeys'], queryFn: getApiKeys });
+  const { data: apiKeyLimits, isLoading: limitsLoading } = useQuery({ queryKey: ['apiKeyLimits'], queryFn: getApiKeyLimits });
 
-  const revokeMutation = useMutation(revokeApiKey, {
+  const revokeMutation = useMutation({ mutationFn: revokeApiKey,
     onSuccess: () => {
-      queryClient.invalidateQueries('apiKeys');
-      queryClient.invalidateQueries('apiKeyLimits');
+      queryClient.invalidateQueries({ queryKey: ['apiKeys'] });
+      queryClient.invalidateQueries({ queryKey: ['apiKeyLimits'] });
       toast.success('API key revoked successfully');
     },
     onError: () => {
@@ -304,8 +304,8 @@ export function ApiKeysPage() {
 
 
   const handleCreateSuccess = (newKey?: ApiKey) => {
-    queryClient.invalidateQueries('apiKeys');
-    queryClient.invalidateQueries('apiKeyLimits');
+    queryClient.invalidateQueries({ queryKey: ['apiKeys'] });
+    queryClient.invalidateQueries({ queryKey: ['apiKeyLimits'] });
     if (newKey) {
       setNewlyCreatedKey(newKey);
       setShowNewKeyModal(true);

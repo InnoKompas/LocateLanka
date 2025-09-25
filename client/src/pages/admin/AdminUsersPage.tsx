@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Search, 
   UserCheck, 
@@ -27,45 +27,42 @@ export const AdminUsersPage = () => {
   const [showUserModal, setShowUserModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const { data, isLoading } = useQuery(
-    ['adminUsers', page, search, roleFilter, statusFilter],
-    () => getAllUsers({
+  const { data, isLoading } = useQuery({
+    queryKey: ['adminUsers', page, search, roleFilter, statusFilter],
+    queryFn: () => getAllUsers({
       page,
       limit: 20,
       search: search || undefined,
       role: roleFilter !== 'all' ? roleFilter : undefined,
       status: statusFilter !== 'all' ? statusFilter : undefined
     }),
-    { keepPreviousData: true }
-  );
+    placeholderData: (previousData) => previousData
+  });
 
-  const updateUserMutation = useMutation(
-    ({ userId, updates }: { userId: string; updates: Partial<AdminUser> }) =>
+  const updateUserMutation = useMutation({
+    mutationFn: ({ userId, updates }: { userId: string; updates: Partial<AdminUser> }) =>
       updateUser(userId, updates),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['adminUsers']);
-        toast.success('User updated successfully');
-      },
-      onError: (error: any) => {
-        toast.error(error.message || 'Failed to update user');
-      }
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+      toast.success('User updated successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to update user');
     }
-  );
+  });
 
-  const deleteUserMutation = useMutation(
-    (userId: string) => deleteUser(userId),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['adminUsers']);
-        setShowDeleteModal(false);
-        setSelectedUser(null);
-        toast.success('User deactivated successfully');
-      },
-      onError: (error: any) => {
-        toast.error(error.message || 'Failed to deactivate user');
-      }
+  const deleteUserMutation = useMutation({
+    mutationFn: (userId: string) => deleteUser(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+      setShowDeleteModal(false);
+      setSelectedUser(null);
+      toast.success('User deactivated successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to deactivate user');
     }
+  }
   );
 
   const handleToggleStatus = (user: AdminUser) => {
@@ -163,7 +160,7 @@ export const AdminUsersPage = () => {
             variant="ghost"
             size="sm"
             onClick={() => handleToggleStatus(user)}
-            disabled={updateUserMutation.isLoading}
+            disabled={updateUserMutation.isPending}
           >
             {user.isActive ? (
               <UserX className="w-4 h-4 text-red-600" />
@@ -176,7 +173,7 @@ export const AdminUsersPage = () => {
             variant="ghost"
             size="sm"
             onClick={() => handleToggleRole(user)}
-            disabled={updateUserMutation.isLoading}
+            disabled={updateUserMutation.isPending}
           >
             {user.role === 'admin' ? (
               <ShieldOff className="w-4 h-4 text-orange-600" />
@@ -347,10 +344,10 @@ export const AdminUsersPage = () => {
               <Button
                 variant="primary"
                 onClick={handleDeleteUser}
-                disabled={deleteUserMutation.isLoading}
+                disabled={deleteUserMutation.isPending}
                 className="bg-red-600 hover:bg-red-700"
               >
-                {deleteUserMutation.isLoading ? 'Deactivating...' : 'Deactivate User'}
+                {deleteUserMutation.isPending ? 'Deactivating...' : 'Deactivate User'}
               </Button>
             </div>
           </div>

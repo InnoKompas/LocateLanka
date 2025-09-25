@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   LineChart,
   Line,
@@ -31,11 +31,11 @@ export const AdminAnalyticsPage = () => {
   const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [days, setDays] = useState(30);
 
-  const { data: analytics, isLoading } = useQuery(
-    ['adminAnalytics', period, days],
-    () => getUsageAnalytics({ period, days }),
-    { refetchInterval: 300000 } // Refresh every 5 minutes
-  );
+  const { data: analytics, isLoading } = useQuery({
+    queryKey: ['adminAnalytics', period, days],
+    queryFn: () => getUsageAnalytics({ period, days }),
+    refetchInterval: 300000 // Refresh every 5 minutes
+  });
 
   // Prepare chart data
   const usageChartData = analytics?.usageOverTime?.map(item => ({

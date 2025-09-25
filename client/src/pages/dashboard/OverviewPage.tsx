@@ -1,5 +1,5 @@
 import React from 'react';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { 
   Activity, 
@@ -57,21 +57,21 @@ function StatsCard({ title, value, subtitle, icon, trend }: StatsCardProps) {
 export function OverviewPage() {
   const { user } = useAuth();
   
-  const { data: userStats, isLoading: statsLoading } = useQuery(
-    'userStats',
-    getUserStats,
-    { refetchInterval: 30000 } // Refresh every 30 seconds
-  );
+  const { data: userStats, isLoading: statsLoading } = useQuery({
+    queryKey: ['userStats'],
+    queryFn: getUserStats,
+    refetchInterval: 30000 // Refresh every 30 seconds
+  });
 
-  const { data: apiKeys, isLoading: keysLoading } = useQuery(
-    'apiKeys',
-    getApiKeys
-  );
+  const { data: apiKeys, isLoading: keysLoading } = useQuery({
+    queryKey: ['apiKeys'],
+    queryFn: getApiKeys
+  });
 
-  const { data: recentUsage } = useQuery(
-    ['usage', 'daily'],
-    () => getUsageData('daily')
-  );
+  const { data: recentUsage } = useQuery({
+    queryKey: ['usage', 'daily'],
+    queryFn: () => getUsageData('daily')
+  });
 
   const getGreeting = () => {
     const hour = new Date().getHours();

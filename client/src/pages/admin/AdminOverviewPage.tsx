@@ -1,4 +1,4 @@
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import { 
   Users, 
   Key, 
@@ -16,17 +16,17 @@ import { getDashboardStats, getRecentActivity } from '../../services/admin.servi
 import { formatDistanceToNow } from 'date-fns';
 
 export const AdminOverviewPage = () => {
-  const { data: stats, isLoading: statsLoading } = useQuery(
-    'adminStats',
-    getDashboardStats,
-    { refetchInterval: 30000 }
-  );
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['adminStats'],
+    queryFn: getDashboardStats,
+    refetchInterval: 30000
+  });
 
-  const { data: activity, isLoading: activityLoading } = useQuery(
-    'adminActivity',
-    () => getRecentActivity(10),
-    { refetchInterval: 60000 }
-  );
+  const { data: activity, isLoading: activityLoading } = useQuery({
+    queryKey: ['adminActivity'],
+    queryFn: () => getRecentActivity(10),
+    refetchInterval: 60000
+  });
 
   if (statsLoading) {
     return (

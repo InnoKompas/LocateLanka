@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Shield, 
   Bell, 
@@ -22,28 +22,28 @@ export const AdminSettingsPage = () => {
   const [settings, setSettings] = useState<SystemSettings | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
 
-  const { data: systemSettings, isLoading } = useQuery(
-    'systemSettings',
-    getSystemSettings,
-    {
-      onSuccess: (data) => {
-        setSettings(data);
-      }
-    }
-  );
+  const { data: systemSettings, isLoading } = useQuery({
+    queryKey: ['systemSettings'],
+    queryFn: getSystemSettings
+  });
 
-  const updateSettingsMutation = useMutation(
-    (updates: Partial<SystemSettings>) => updateSystemSettings(updates),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries('systemSettings');
-        setHasChanges(false);
-        toast.success('Settings updated successfully');
-      },
-      onError: (error: any) => {
-        toast.error(error.message || 'Failed to update settings');
-      }
+  useEffect(() => {
+    if (systemSettings) {
+      setSettings(systemSettings);
     }
+  }, [systemSettings]);
+
+  const updateSettingsMutation = useMutation({
+    mutationFn: (updates: Partial<SystemSettings>) => updateSystemSettings(updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['systemSettings'] });
+      setHasChanges(false);
+      toast.success('Settings updated successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to update settings');
+    }
+  }
   );
 
   const handleSettingChange = (key: keyof SystemSettings, value: any) => {
@@ -129,17 +129,17 @@ export const AdminSettingsPage = () => {
               <Button
                 variant="outline"
                 onClick={handleResetSettings}
-                disabled={updateSettingsMutation.isLoading}
+                disabled={updateSettingsMutation.isPending}
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Reset
               </Button>
               <Button
                 onClick={handleSaveSettings}
-                disabled={updateSettingsMutation.isLoading}
+                disabled={updateSettingsMutation.isPending}
               >
                 <Save className="w-4 h-4 mr-2" />
-                {updateSettingsMutation.isLoading ? 'Saving...' : 'Save Changes'}
+                {updateSettingsMutation.isPending ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
           )}

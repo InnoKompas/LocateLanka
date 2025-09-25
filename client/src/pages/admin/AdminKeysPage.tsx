@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Search, 
   Key, 
@@ -28,45 +28,42 @@ export const AdminKeysPage = () => {
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [showRevokeModal, setShowRevokeModal] = useState(false);
 
-  const { data, isLoading } = useQuery(
-    ['adminApiKeys', page, search, statusFilter],
-    () => getAllApiKeys({
+  const { data, isLoading } = useQuery({
+    queryKey: ['adminApiKeys', page, search, statusFilter],
+    queryFn: () => getAllApiKeys({
       page,
       limit: 20,
       search: search || undefined,
       status: statusFilter !== 'all' ? statusFilter : undefined
     }),
-    { keepPreviousData: true }
-  );
+    placeholderData: (previousData) => previousData
+  });
 
-  const updateKeyMutation = useMutation(
-    ({ keyId, updates }: { keyId: string; updates: any }) =>
+  const updateKeyMutation = useMutation({
+    mutationFn: ({ keyId, updates }: { keyId: string; updates: any }) =>
       updateApiKey(keyId, updates),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['adminApiKeys']);
-        toast.success('API key updated successfully');
-      },
-      onError: (error: any) => {
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminApiKeys'] });
+      toast.success('API key updated successfully');
+    },
+    onError: (error: any) => {
         toast.error(error.message || 'Failed to update API key');
       }
     }
   );
 
-  const revokeKeyMutation = useMutation(
-    (keyId: string) => revokeApiKey(keyId),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['adminApiKeys']);
-        setShowRevokeModal(false);
-        setSelectedKey(null);
-        toast.success('API key revoked successfully');
-      },
-      onError: (error: any) => {
-        toast.error(error.message || 'Failed to revoke API key');
-      }
+  const revokeKeyMutation = useMutation({
+    mutationFn: (keyId: string) => revokeApiKey(keyId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminApiKeys'] });
+      setShowRevokeModal(false);
+      setSelectedKey(null);
+      toast.success('API key revoked successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to revoke API key');
     }
-  );
+  });
 
   const handleToggleStatus = (key: AdminApiKey) => {
     updateKeyMutation.mutate({
@@ -181,7 +178,7 @@ export const AdminKeysPage = () => {
             variant="ghost"
             size="sm"
             onClick={() => handleToggleStatus(key)}
-            disabled={updateKeyMutation.isLoading}
+            disabled={updateKeyMutation.isPending}
           >
             {key.isActive ? (
               <ShieldOff className="w-4 h-4 text-orange-600" />
@@ -411,10 +408,10 @@ export const AdminKeysPage = () => {
               <Button
                 variant="primary"
                 onClick={handleRevokeKey}
-                disabled={revokeKeyMutation.isLoading}
+                disabled={revokeKeyMutation.isPending}
                 className="bg-red-600 hover:bg-red-700"
               >
-                {revokeKeyMutation.isLoading ? 'Revoking...' : 'Revoke Key'}
+                {revokeKeyMutation.isPending ? 'Revoking...' : 'Revoke Key'}
               </Button>
             </div>
           </div>

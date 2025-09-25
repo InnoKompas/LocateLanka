@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import { 
   CreditCard, 
   Calendar, 
@@ -133,15 +133,11 @@ export function BillingPage() {
   const [selectedPlan, setSelectedPlan] = useState<string>('');
   const [isUpgrading, setIsUpgrading] = useState(false);
 
-  const { data: billingInfo, isLoading: billingLoading } = useQuery(
-    'billingInfo',
-    getBillingInfo
-  );
+  const { data: billingInfo, isLoading: billingLoading } = useQuery({ queryKey: ['billingInfo'], queryFn: getBillingInfo
+   });
 
-  const { data: availablePlans, isLoading: plansLoading } = useQuery(
-    'availablePlans',
-    getAvailablePlans
-  );
+  const { data: availablePlans, isLoading: plansLoading } = useQuery({ queryKey: ['availablePlans'], queryFn: getAvailablePlans
+   });
 
   const handleUpgrade = async (planId: string) => {
     setSelectedPlan(planId);

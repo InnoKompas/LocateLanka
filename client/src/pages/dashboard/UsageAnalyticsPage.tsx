@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   LineChart,
   Line,
@@ -26,16 +26,16 @@ const COLORS = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'
 export function UsageAnalyticsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>('daily');
 
-  const { data: usageData, isLoading: usageLoading } = useQuery(
-    ['usage', selectedPeriod],
-    () => getUsageData(selectedPeriod),
-    { keepPreviousData: true }
-  );
+  const { data: usageData, isLoading: usageLoading } = useQuery({
+    queryKey: ['usage', selectedPeriod],
+    queryFn: () => getUsageData(selectedPeriod),
+    placeholderData: (previousData) => previousData
+  });
 
-  const { data: topEndpoints } = useQuery(
-    'topEndpoints',
-    getTopEndpoints
-  );
+  const { data: topEndpoints } = useQuery({
+    queryKey: ['topEndpoints'],
+    queryFn: getTopEndpoints
+  });
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
