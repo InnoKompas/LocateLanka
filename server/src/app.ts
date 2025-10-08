@@ -2,6 +2,7 @@ import express, { Application } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
+import path from 'path';
 import apiKeyRoutes from './routes/api/keys.routes';
 import analyticsRoutes from './routes/api/analytics.routes';
 import adminRoutes from './routes/admin.routes';
@@ -67,6 +68,9 @@ if (LOGGING.FORMAT === 'dev') {
   }));
 }
 
+// Serve static files from frontend build
+app.use(express.static(path.join(__dirname, '../public')));
+
 // Health check routes (no authentication required)
 app.use('/', healthRoutes);
 
@@ -90,6 +94,11 @@ app.use('/api/billing', billingRoutes);
 
 // API v1 routes (require API key authentication)
 app.use('/api/v1', apiV1Routes);
+
+// Catch-all handler: send back frontend's index.html file for SPA routing
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
+});
 
 // 404 handler
 app.use(notFoundHandler);
